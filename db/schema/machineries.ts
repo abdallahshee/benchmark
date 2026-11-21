@@ -22,4 +22,4 @@ export const machineries = pgTable(
     check("machineries_number_check", sql`${t.number} >= 0`),
     check("machineries_hours_check", sql`${t.hours} >= 0`),
   ],
-).enableRLS();
+)

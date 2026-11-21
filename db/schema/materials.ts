@@ -21,4 +21,4 @@ export const materials = pgTable(
     check("materials_quantity_check", sql`${t.quantity} >= 0`),
     check("materials_unit_cost_check", sql`${t.unitCost} >= 0`),
   ],
-).enableRLS();
+)
