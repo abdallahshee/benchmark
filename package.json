@@ -9,7 +9,6 @@
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:triggers": "tsx --env-file=.env scripts/apply-sql.ts",
- 
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
@@ -46,6 +45,7 @@
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
     "tailwindcss": "4.3.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "zod": "^4.6.7"
   }
 }

@@ -1,11 +1,12 @@
 "use client";
 
-import { Role, ROLE_LABELS, ROLES } from "@/types/user";
+import { Role, ROLE_LABELS } from "@/types/user";
 import { ActionIcon, Badge, Select, Table, Text, Tooltip } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import { useTransition } from "react";
 import { ActionResult, changeRole, deleteUser } from "./actions";
+import { ROLES } from "@/types/enums";
 
 
 export type UserRow = {

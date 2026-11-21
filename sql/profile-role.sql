@@ -13,7 +13,7 @@ begin
   new_role := new.raw_app_meta_data ->> 'role';
 
   -- Ignore anything that isn't a known role (keep in sync with ROLES).
-  if new_role is not null and new_role not in ('admin', 'secretary','foreman','worker') then
+  if new_role is not null and new_role not in ('admin', 'secretary','foreman') then
     new_role := null;
   end if;
 
@@ -36,7 +36,7 @@ insert into public.profiles (id, full_name, role)
 select
   id,
   raw_user_meta_data ->> 'full_name',
-  case when raw_app_meta_data ->> 'role' in ('admin', 'secretary','foreman','worker')
+  case when raw_app_meta_data ->> 'role' in ('admin', 'secretary','foreman')
        then raw_app_meta_data ->> 'role' end
 from auth.users
 on conflict (id) do nothing;
