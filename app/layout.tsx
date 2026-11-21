@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import "./globals.css";
 import { Providers } from "./providers";
+import { SignOutButton } from "@/components/sign-out-button";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +32,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ColorSchemeScript defaultColorScheme="auto" />
       </head>
       <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+        <Providers>
+          <SignOutButton/>
+          {children}
+          </Providers>
       </body>
     </html>
   );

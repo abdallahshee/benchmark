@@ -8,10 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
+    "db:triggers": "tsx --env-file=.env scripts/apply-sql.ts",
+ 
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "create-admin": "node --env-file=.env scripts/create-admin.ts"
+    "db:seed": "tsx --env-file=.env scripts/seed-admin.ts"
   },
   "dependencies": {
     "@mantine/core": "^9.8.1",

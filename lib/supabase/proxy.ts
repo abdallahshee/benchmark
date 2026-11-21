@@ -3,14 +3,33 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isRole } from "../roles";
 
+// Where each role lands, and the only area it may use.
+// Record<Role, string> makes TypeScript complain if you add a role and forget it here.
+const ROLE_HOME: Record<Role, string> = {
+  admin: "/admin",
+  secretary: "/secretary",
+  foreman: "/foreman",
+  worker:"/worker"
+};
 
-// Routes that require a signed-in user.
-const PROTECTED_PREFIXES = ["/account", "/admin"];
-// Routes restricted to certain roles. This is a fast first gate using the `user_role`
-// JWT claim; pages and Server Actions re-check the role with requireRole().
-const ROLE_PREFIXES: [prefix: string, roles: Role[]][] = [["/admin", ["admin"]]];
-// Routes only for signed-out users; signed-in users are sent to /account.
+// Routes restricted to certain roles. A fast first gate; pages and Server Actions
+// still re-check with requireRole(). To let admins into every area, add "admin"
+// to the other lists.
+const ROLE_PREFIXES: [prefix: string, roles: Role[]][] = [
+  ["/admin", ["admin"]],
+  ["/secretary", ["secretary"]],
+  ["/foreman", ["foreman"]],
+];
+
+// Every role-restricted prefix also requires a signed-in user.
+const PROTECTED_PREFIXES = ROLE_PREFIXES.map(([prefix]) => prefix);
+
+// Routes only for signed-out users.
 const AUTH_ROUTES = ["/login"];
+
+// Signed-in users without a role land here. Must not be in PROTECTED_PREFIXES
+// or AUTH_ROUTES, or you get a redirect loop.
+const NO_ACCESS = "/no-access";
 
 const matches = (pathname: string, prefix: string) =>
   pathname === prefix || pathname.startsWith(prefix + "/");
@@ -49,39 +68,38 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
 
+  // Redirect while keeping any refreshed/cleared auth cookies.
+  const redirectTo = (pathname: string, search = "") => {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname;
+    url.search = search;
+    const redirect = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((c) => redirect.cookies.set(c));
+    return redirect;
+  };
+
+  // The app role lives in app_metadata (written server-side by the trigger and the
+  // seed script). The top-level `role` claim is the Postgres role ("authenticated").
+  const rawRole = (user?.app_metadata as { role?: unknown } | undefined)?.role;
+  const role: Role | null = isRole(rawRole) ? rawRole : null;
+
   const { pathname } = request.nextUrl;
+
+  // 1. Signed out on a protected route.
   if (!user && PROTECTED_PREFIXES.some((p) => matches(pathname, p))) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.search = `?next=${encodeURIComponent(pathname)}`;
-    const redirect = NextResponse.redirect(url);
-    // Keep any refreshed/cleared auth cookies on the redirect.
-    response.cookies.getAll().forEach((c) => redirect.cookies.set(c));
-    return redirect;
+    return redirectTo("/login", `?next=${encodeURIComponent(pathname)}`);
   }
 
-  // Only enforced when the claim is present (i.e. the access token hook is enabled);
-  // otherwise the page's own requireRole() check decides.
-  const claimRole = user?.role;
+  // 2. Signed in, but the route belongs to other roles (or the user has none).
   const required = ROLE_PREFIXES.find(([p]) => matches(pathname, p))?.[1];
-  if (user && required && claimRole !== undefined) {
-    if (!isRole(claimRole) || !required.includes(claimRole)) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/account";
-      url.search = "";
-      const redirect = NextResponse.redirect(url);
-      response.cookies.getAll().forEach((c) => redirect.cookies.set(c));
-      return redirect;
-    }
+  if (user && required) {
+    if (!role) return redirectTo(NO_ACCESS);
+    if (!required.includes(role)) return redirectTo(ROLE_HOME[role]);
   }
 
+  // 3. Signed-in users don't need the login page.
   if (user && AUTH_ROUTES.includes(pathname)) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/account";
-    url.search = "";
-    const redirect = NextResponse.redirect(url);
-    response.cookies.getAll().forEach((c) => redirect.cookies.set(c));
-    return redirect;
+    return redirectTo(role ? ROLE_HOME[role] : NO_ACCESS);
   }
 
   // Return `response` as-is so the refreshed cookies reach the browser.

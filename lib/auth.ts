@@ -18,13 +18,14 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   if (!claims) return null;
 
   const [profile] = await db
-    .select({ fullName: profiles.fullName, role: profiles.role,updatedAt:profiles.updatedAt })
+    .select({ fullName: profiles.fullName,siteId:profiles.siteId, role: profiles.role,updatedAt:profiles.updatedAt })
     .from(profiles)
     .where(eq(profiles.id, claims.sub))
     .limit(1);
 
   return {
     id: claims.sub!,
+    siteId:profile.siteId??null,
     email: claims.email,
     fullName: profile?.fullName ?? null,
     role: profile?.role ?? null,
@@ -33,7 +34,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
 });
 
 // For pages: redirects to /login when signed out.
-export async function requireUser(next = "/account") {
+export async function requireUser(next :string) {
   const user = await getCurrentUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(next)}`);
   return user;

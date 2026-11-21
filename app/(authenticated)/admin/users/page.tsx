@@ -9,8 +9,9 @@ import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { requireRole } from "@/lib/auth";
 
-import { InviteForm } from "./invite-form";
+
 import { UsersTable } from "./users-table";
+import { InviteForm } from "./invite-user-form";
 
 export const metadata: Metadata = { title: "Users" };
 

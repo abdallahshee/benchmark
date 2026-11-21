@@ -1,4 +1,3 @@
-CREATE TYPE "public"."user_role" AS ENUM('admin', 'foreman', 'secretary');--> statement-breakpoint
 CREATE TABLE "posts" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"title" text NOT NULL,
@@ -9,7 +8,7 @@ CREATE TABLE "posts" (
 CREATE TABLE "profiles" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"full_name" text,
-	"role" "user_role",
+	"role" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );

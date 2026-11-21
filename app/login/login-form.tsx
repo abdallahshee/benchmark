@@ -5,11 +5,12 @@ import { isEmail, isNotEmpty, useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { useSearchParams } from "next/navigation";
 import { useTransition } from "react";
-import { signIn } from "../account/actions";
+import { signIn } from "./actions";
+
 
 export function LoginForm() {
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/account";
+  const next = searchParams.get("next") ?? "/undefined";
   const linkFailed = searchParams.get("error") === "confirmation_failed";
   const [pending, startTransition] = useTransition();
 

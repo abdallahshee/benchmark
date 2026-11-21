@@ -1,6 +1,6 @@
 "use client";
 
-import { signOut } from "@/app/account/actions";
+import { signOut } from "@/app/login/actions";
 import { Button, Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
 
