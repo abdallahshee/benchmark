@@ -19,13 +19,14 @@ const ROLE_PREFIXES: [prefix: string, roles: Role[]][] = [
   ["/admin", ["admin"]],
   ["/secretary", ["secretary"]],
   ["/foreman", ["foreman"]],
+   ["/worker", ["worker"]],
 ];
 
 // Every role-restricted prefix also requires a signed-in user.
 const PROTECTED_PREFIXES = ROLE_PREFIXES.map(([prefix]) => prefix);
 
 // Routes only for signed-out users.
-const AUTH_ROUTES = ["/login"];
+const AUTH_ROUTES = ["/"];
 
 // Signed-in users without a role land here. Must not be in PROTECTED_PREFIXES
 // or AUTH_ROUTES, or you get a redirect loop.
@@ -87,7 +88,7 @@ export async function updateSession(request: NextRequest) {
 
   // 1. Signed out on a protected route.
   if (!user && PROTECTED_PREFIXES.some((p) => matches(pathname, p))) {
-    return redirectTo("/login", `?next=${encodeURIComponent(pathname)}`);
+    return redirectTo("/", `?next=${encodeURIComponent(pathname)}`);
   }
 
   // 2. Signed in, but the route belongs to other roles (or the user has none).

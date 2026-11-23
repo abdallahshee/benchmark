@@ -24,6 +24,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
       phone: profiles.phone,
       siteId: profiles.siteId,
       role: profiles.role,
+      status: profiles.status,
     })
     .from(profiles)
     .where(eq(profiles.id, claims.sub))
@@ -39,6 +40,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     phone: profile?.phone ?? "",
     siteId: profile?.siteId ?? null,
     role: profile?.role ?? null,
+    status: profile?.status ?? null,
   };
 });
 

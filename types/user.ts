@@ -2,6 +2,7 @@ import { ROLES } from "./enums";
 
 export type Role = (typeof ROLES)[number];
 
+
 export const ROLE_LABELS: Record<Role, string> = {
   admin: "admin",
   foreman: "foreman",

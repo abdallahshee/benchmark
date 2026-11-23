@@ -17,6 +17,7 @@ import { authUsers } from "drizzle-orm/supabase";
 import { createAdminClient } from "@/lib/supabase/admin"; // adjust to your path
 import type { Role } from "@/types/user";
 import z from "zod"
+import { inviteStaffSchema } from "@/schemas/user";
 
 export type ActionResult = { ok: true; message: string } | { ok: false; error: string };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -24,90 +25,172 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const isUuid = (value: string) => UUID_RE.test(value);
 
 // Keep the role list in sync with ROLES. Admins are never created through this form.
-const inviteSchema = z.object({
-  siteId: z.string(),
-  firstName: z.string().trim().min(1, "Enter a first name").max(60),
-  lastName: z.string().trim().min(1, "Enter a last name").max(60),
-  email: z.string().trim().toLowerCase(),
-  phone: z.string().trim().regex(/^(\+?[0-9\s-]{7,15})?$/, "Enter a valid phone number"),
-  role: z.enum(["foreman", "secretary"]),
-});
 
-export async function inviteSiteUser(input: {
+
+type SiteStaffRole = "foreman" | "secretary";
+
+type InviteSiteUserInput = {
   siteId: string;
   email: string;
   firstName: string;
   lastName: string;
   phone: string;
-  role: "foreman" | "secretary";
-}): Promise<ActionResult> {
-  await requireRole("admin"); // actions are public endpoints, so check first
+};
 
-  // Don't trust the argument's shape.
-  const parsed = inviteSchema.safeParse(input);
+async function inviteSiteUser(
+  input: InviteSiteUserInput,
+  role: SiteStaffRole,
+): Promise<ActionResult> {
+  await requireRole("admin");
+
+  // Validate input.
+  const parsed = inviteStaffSchema.safeParse(input);
+
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid details" };
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Invalid details",
+    };
   }
-  const { siteId, firstName, lastName, email, phone, role } = parsed.data;
 
-  const [site] = await db.select({ id: sites.id }).from(sites).where(eq(sites.id, siteId)).limit(1);
-  if (!site) return { ok: false, error: "Site not found" };
+  const { siteId, firstName, lastName, email, phone } = parsed.data;
 
-  // A site has one foreman and one secretary. The unique indexes enforce it as well.
+  // Verify site exists.
+  const [site] = await db
+    .select({ id: sites.id })
+    .from(sites)
+    .where(eq(sites.id, siteId))
+    .limit(1);
+
+  if (!site) {
+    return { ok: false, error: "Site not found" };
+  }
+
+  // Check whether this site already has someone assigned to this role.
   const [taken] = await db
     .select({ id: profiles.id })
     .from(profiles)
-    .where(and(eq(profiles.siteId, siteId), eq(profiles.role, role)))
+    .where(
+      and(
+        eq(profiles.siteId, siteId),
+        eq(profiles.role, role),
+      ),
+    )
     .limit(1);
-  if (taken) return { ok: false, error: `This site already has a ${role}.` };
+
+  if (taken) {
+    return {
+      ok: false,
+      error: `This site already has a ${role}.`,
+    };
+  }
 
   const admin = createAdminClient();
   const siteUrl = await getSiteUrl();
 
+  // Send invitation.
   const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-    // snake_case keys: the signup trigger reads these to fill the profile.
-    data: { first_name: firstName, last_name: lastName, phone },
+    data: {
+      first_name: firstName,
+      last_name: lastName,
+      phone,
+    },
     redirectTo: `${siteUrl}/auth/confirm?next=/set-password`,
   });
+
   if (error) {
-    if (error.code === "email_exists" || error.code === "user_already_exists") {
-      return { ok: false, error: "A user with this email already exists" };
+    if (
+      error.code === "email_exists" ||
+      error.code === "user_already_exists"
+    ) {
+      return {
+        ok: false,
+        error: "A user with this email already exists",
+      };
     }
+
     if (error.code === "over_email_send_rate_limit") {
-      return { ok: false, error: "Email rate limit reached. Try again later." };
+      return {
+        ok: false,
+        error: "Email rate limit reached. Try again later.",
+      };
     }
-    return { ok: false, error: authErrorMessage(error, "invite") };
+
+    return {
+      ok: false,
+      error: authErrorMessage(error, "invite"),
+    };
   }
+
   const userId = data.user.id;
 
-  // The role has to live in app_metadata too (the proxy reads it), and an invite can't
-  // set it, so it is written right after. Don't leave a half-set-up account behind.
-  const { error: metaError } = await admin.auth.admin.updateUserById(userId, {
-    app_metadata: { role },
-  });
+  // Set the role in Supabase app_metadata.
+  const { error: metaError } = await admin.auth.admin.updateUserById(
+    userId,
+    {
+      app_metadata: { role },
+    },
+  );
+
   if (metaError) {
     await admin.auth.admin.deleteUser(userId);
-    return { ok: false, error: "Could not set up the account. Please try again." };
+
+    return {
+      ok: false,
+      error: "Could not set up the account. Please try again.",
+    };
   }
 
-  // The trigger already created the profile; give it its role and its site.
+  // Assign the role and site to the profile.
   try {
     const updated = await db
       .update(profiles)
-      .set({ role, siteId, firstName, lastName, phone })
+      .set({
+        siteId,
+        firstName,
+        lastName,
+        phone,
+        role,
+      })
       .where(eq(profiles.id, userId))
       .returning({ id: profiles.id });
-    if (updated.length === 0) throw new Error("Profile row is missing");
+
+    if (updated.length === 0) {
+      throw new Error("Profile row is missing");
+    }
   } catch {
     await admin.auth.admin.deleteUser(userId);
-    return { ok: false, error: "Could not assign the user to the site. Please try again." };
+
+    return {
+      ok: false,
+      error: "Could not assign the user to the site. Please try again.",
+    };
   }
 
+  // Revalidate affected pages.
   revalidatePath(`/admin/sites/${siteId}`);
   revalidatePath("/admin/sites");
   revalidatePath("/admin/users");
   revalidatePath("/admin");
-  return { ok: true, message: `Invitation sent to ${email}` };
+
+  return {
+    ok: true,
+    message: `Invitation sent to ${email}`,
+  };
+}
+
+// Invite a foreman.
+export async function inviteForeman(
+  input: InviteSiteUserInput,
+): Promise<ActionResult> {
+  return inviteSiteUser(input, "foreman");
+}
+
+// Invite a secretary.
+export async function inviteSecretary(
+  input: InviteSiteUserInput,
+): Promise<ActionResult> {
+  return inviteSiteUser(input, "secretary");
 }
 
 export async function changeRole(userId: string, role: Role): Promise<ActionResult> {

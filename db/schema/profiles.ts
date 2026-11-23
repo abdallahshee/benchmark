@@ -1,7 +1,7 @@
 import {  index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import {  authUsers } from "drizzle-orm/supabase";
 import { timestamps } from "./common";
-import { ROLES } from "@/types/enums";
+import { ROLES, USER_STATUS } from "@/types/enums";
 
 
 
@@ -26,6 +26,7 @@ export const profiles = pgTable(
     firstName: text("first_name").notNull(),
     lastName: text("last_name").notNull(),
     phone: text("phone").notNull(),
+    status:text("status",{enum:USER_STATUS}),
     role: text("role", { enum: ROLES }), // nullable until an admin assigns one
     // The engineer (admin) has no site. Foremen and secretaries belong to one.
     siteId: uuid("site_id").references(() => sites.id, { onDelete: "set null" }),
