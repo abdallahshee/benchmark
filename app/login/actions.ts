@@ -40,7 +40,7 @@ export async function signIn(input: Credentials): Promise<AuthState> {
     return { error: "Your account has no role assigned yet. Please contact an administrator." };
   }
 
-  redirect("/admin/users");
+  redirect("/admin");
 }
 
 export async function signOut() {

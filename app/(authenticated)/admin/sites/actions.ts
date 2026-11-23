@@ -71,3 +71,49 @@ export async function getSites() {
 
 export type SiteListItem = Awaited<ReturnType<typeof getSites>>[number];
 
+
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// A malformed id would make Postgres throw, so the query functions treat it as
+// "not found" instead. The ! in `if (!isUuid(id)) return null;` means "not a UUID".
+const isUuid = (value: string) => UUID_RE.test(value);
+// Shared by the foreman and secretary lookups. A site has at most one of each.
+async function getSiteUserByRole(siteId: string, role: "foreman" | "secretary") {
+  if (!isUuid(siteId)) return null;
+
+  const [person] = await db
+    .select({
+      id: profiles.id,
+      firstName: profiles.firstName,
+      lastName: profiles.lastName,
+      phone: profiles.phone,
+      email: sql<string | null>`(select u.email from auth.users u where u.id = ${profiles}.id)`,
+    })
+    .from(profiles)
+    .where(and(eq(profiles.siteId, siteId), eq(profiles.role, role)))
+    .limit(1);
+
+  return person ?? null;
+}
+
+export const getForemanBySiteId = cache((siteId: string) => getSiteUserByRole(siteId, "foreman"));
+export const getSecretaryBySiteId = cache((siteId: string) => getSiteUserByRole(siteId, "secretary"));
+
+// Everyone assigned to the site, with contact details. Foreman first, then secretary.
+export const getUsersBySiteId = cache(async (siteId: string) => {
+  if (!isUuid(siteId)) return [];
+
+  return db
+    .select({
+      id: profiles.id,
+      firstName: profiles.firstName,
+      lastName: profiles.lastName,
+      phone: profiles.phone,
+      role: profiles.role,
+      email: sql<string | null>`(select u.email from auth.users u where u.id = ${profiles}.id)`,
+    })
+    .from(profiles)
+    .where(eq(profiles.siteId, siteId))
+    .orderBy(asc(profiles.role), asc(profiles.firstName));
+});

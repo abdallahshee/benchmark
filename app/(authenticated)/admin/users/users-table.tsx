@@ -27,7 +27,14 @@ function notify(result: ActionResult) {
 
 const thProps = { fz: "xs", tt: "uppercase", fw: 600, c: "dimmed" } as const;
 
-export function UsersTable({ users, currentUserId }: { users: UserRow[]; currentUserId: string }) {
+type UsersTableProps = {
+  users: UserRow[];
+  currentUserId: string;
+  // True when the list is a search result, so an empty table says so.
+  searching?: boolean;
+};
+
+export function UsersTable({ users, currentUserId, searching = false }: UsersTableProps) {
   const [pending, startTransition] = useTransition();
 
   // Admins and the signed-in user are never listed, so neither can be changed or deleted here.
@@ -72,7 +79,7 @@ export function UsersTable({ users, currentUserId }: { users: UserRow[]; current
             <Table.Tr>
               <Table.Td colSpan={7}>
                 <Text c="dimmed" ta="center" py="md">
-                  No other users yet.
+                  {searching ? "No users match your search." : "No other users yet."}
                 </Text>
               </Table.Td>
             </Table.Tr>

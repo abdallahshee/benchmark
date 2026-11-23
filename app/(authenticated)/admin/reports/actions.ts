@@ -1,6 +1,7 @@
 import { db } from "@/db";
-import { profiles, reports, sites } from "@/db/schema";
+import { machineries, materials, profiles, reports, sites } from "@/db/schema";
 import { and, asc, desc, eq, sql, type SQL } from "drizzle-orm";
+import { cache } from "react";
 
 // "Created" dates are compared in the site's time zone, as on the pages.
 const TZ = sql.raw("'Africa/Nairobi'");
@@ -41,3 +42,76 @@ export async function getReports({ from, to }: { from?: string | null; to?: stri
     .where(conditions.length ? and(...conditions) : undefined)
     .orderBy(desc(reports.createdAt), asc(sites.name));
 }
+
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// One report with everything on it: site, creator, machineries, materials and the
+// materials total. Returns null for a malformed or unknown id.
+// This function does NOT check access: callers must call requireRole() first.
+export const getReportById = cache(async (id: string) => {
+  if (!UUID_RE.test(id)) return null; // a malformed id would make Postgres throw
+
+  const [reportRows, machineryRows, materialRows, totalRows] = await Promise.all([
+    db
+      .select({
+        id: reports.id,
+        status: reports.status,
+        reportDate: reports.createdAt,
+        notes: reports.notes,
+        createdAt: reports.createdAt,
+        submittedAt: reports.submittedAt,
+        siteId: sites.id,
+        siteName: sites.name,
+        creatorFirstName: profiles.firstName,
+        creatorLastName: profiles.lastName,
+      })
+      .from(reports)
+      .innerJoin(sites, eq(sites.id, reports.siteId))
+      .leftJoin(profiles, eq(profiles.id, reports.createdBy))
+      .where(eq(reports.id, id))
+      .limit(1),
+
+    db
+      .select({
+        id: machineries.id,
+        category: machineries.category,
+        number: machineries.number,
+        hours: machineries.hours,
+      })
+      .from(machineries)
+      .where(eq(machineries.reportId, id))
+      .orderBy(asc(machineries.category)),
+
+    db
+      .select({
+        id: materials.id,
+        name: materials.name,
+        quantity: materials.quantity,
+        unit: materials.unit,
+        unitCost: materials.unitCost,
+        // Plain SQL so Postgres does the exact decimal math.
+        lineCost: sql<string>`(quantity * unit_cost)`,
+      })
+      .from(materials)
+      .where(eq(materials.reportId, id))
+      .orderBy(asc(materials.name)),
+
+    db
+      .select({ total: sql<string>`coalesce(sum(quantity * unit_cost), 0)` })
+      .from(materials)
+      .where(eq(materials.reportId, id)),
+  ]);
+
+  const report = reportRows[0];
+  if (!report) return null;
+
+  return {
+    ...report,
+    machineries: machineryRows,
+    materials: materialRows,
+    materialsTotal: totalRows[0]?.total ?? "0",
+  };
+});
+
+export type ReportDetails = NonNullable<Awaited<ReturnType<typeof getReportById>>>;

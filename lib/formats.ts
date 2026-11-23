@@ -23,3 +23,9 @@ export const formatTime = (d: Date | string | number) => dayjs(d).tz(TZ).format(
 export function displayName(p: { firstName: string | null; lastName: string | null }) {
   return [p.firstName, p.lastName].filter(Boolean).join(" ") || "—";
 }
+
+// Amounts are in Kenyan shillings (change the currency here if that changes).
+const money = new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES" });
+
+// Database decimals arrive as strings, so accept both.
+export const formatMoney = (value: string | number) => money.format(Number(value));

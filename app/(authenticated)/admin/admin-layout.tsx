@@ -46,7 +46,7 @@ const ICONS = {
 export type NavItem = { label: string; href: string; icon: keyof typeof ICONS };
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/admin", icon: "dashboard" },
+  // { label: "Dashboard", href: "/admin", icon: "dashboard" },
   { label: "Sites", href: "/admin/sites", icon: "sites" },
   { label: "Reports", href: "/admin/reports", icon: "reports" },
   { label: "Users", href: "/admin/users", icon: "users" },

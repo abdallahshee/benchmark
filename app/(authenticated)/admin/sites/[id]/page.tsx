@@ -1,17 +1,4 @@
-import {
-  Anchor,
-  Badge,
-  Group,
-  SimpleGrid,
-  Skeleton,
-  Table,
-  TableScrollContainer,
-  TableTbody,
-  TableTd,
-  TableThead,
-  TableTr,
-  Text,
-} from "@mantine/core";
+import { Anchor, Divider, Group, SimpleGrid, Skeleton, Stack, Text } from "@mantine/core";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -23,18 +10,23 @@ import {
   Panel,
   ReportStatusBadge,
   SiteStatusBadge,
-  StatCard,
-  Th,
   initialsOf,
 } from "@/components/admin-ui";
 import { LinkButton } from "@/components/link-button";
 import { requireRole } from "@/lib/auth";
 import { displayName, formatDate, formatDateTime } from "@/lib/formats";
-import { getForemanBySiteId, getReportsBySiteId, getSiteById } from "./action";
+import {
+  getForemanBySiteId,
+  getReportsBySiteId,
+  getSiteById,
+} from "./action";
+import { getSecretaryBySiteId } from "../actions";
 
 export const metadata: Metadata = { title: "Site details" };
 
 type PageProps = { params: Promise<{ id: string }> };
+
+type Person = { firstName: string; lastName: string; phone: string; email: string | null };
 
 export default function SiteDetailsPage({ params }: PageProps) {
   return (
@@ -50,149 +42,146 @@ export default function SiteDetailsPage({ params }: PageProps) {
   );
 }
 
-async function SiteDetails({ params }: PageProps) {
-  await requireRole("admin"); // check access before any query runs
-
-  const { id } = await params;
-  const [site, foreman, siteReports] = await Promise.all([
-    getSiteById(id),
-    getForemanBySiteId(id),
-    getReportsBySiteId(id),
-  ]);
-  if (!site) notFound();
+// One staff member's card, or a prompt to add one when the position is empty.
+// One staff member's card. An empty position offers an Add button; a filled one says
+// why no more can be added.
+function PersonPanel({
+  roleLabel,
+  person,
+  addHref,
+}: {
+  roleLabel: string;
+  person: Person | null;
+  addHref: string;
+}) {
+  const role = roleLabel.toLowerCase();
 
   return (
-    <AdminPage
-      title={site.name}
-      description="Site overview, team and reports"
-      back={{ href: "/admin/sites", label: "Sites" }}
-      actions={<SiteStatusBadge status={site.status} />}
-    >
-      <SimpleGrid cols={{ base: 1, sm: 3 }}>
-        <StatCard label="Users" value={site.users.length} icon="users" color="teal" />
-        <StatCard label="Reports" value={site.reportCount} icon="reports" color="blue" />
-        <StatCard
-          label="Today's report"
-          value={site.hasTodayReport ? "Reported" : "Not yet"}
-          icon="check"
-          color={site.hasTodayReport ? "green" : "yellow"}
-          valueColor={site.hasTodayReport ? "green" : site.status === "active" ? "red" : "dimmed"}
-        />
-      </SimpleGrid>
-
-      <Panel title="Foreman" description="The person who records this site's daily report">
-        {foreman ? (
-          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg">
-            <Group gap="sm" wrap="nowrap">
-              <Avatar color="yellow" radius="xl" size="lg">
-                {initialsOf(foreman)}
-              </Avatar>
-              <div>
-                <Text fw={600}>{displayName(foreman)}</Text>
-                <Text size="sm" c="dimmed">
-                  Site foreman
-                </Text>
-              </div>
-            </Group>
+    <Panel title={roleLabel}>
+      {person ? (
+        <Stack gap="md">
+          <Group gap="sm" wrap="nowrap">
+            <Avatar color="yellow" radius="xl" size="lg">
+              {initialsOf(person)}
+            </Avatar>
+            <div>
+              <Text fw={600}>{displayName(person)}</Text>
+              <Text size="sm" c="dimmed">
+                Site {role}
+              </Text>
+            </div>
+          </Group>
+          <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="md">
             <Field label="Phone">
-              {foreman.phone ? (
-                <Anchor href={`tel:${foreman.phone}`} size="sm">
-                  {foreman.phone}
+              {person.phone ? (
+                <Anchor href={`tel:${person.phone}`} size="sm">
+                  {person.phone}
                 </Anchor>
               ) : (
                 <Text size="sm">—</Text>
               )}
             </Field>
             <Field label="Email">
-              {foreman.email ? (
-                <Anchor href={`mailto:${foreman.email}`} size="sm">
-                  {foreman.email}
+              {person.email ? (
+                <Anchor href={`mailto:${person.email}`} size="sm">
+                  {person.email}
                 </Anchor>
               ) : (
                 <Text size="sm">—</Text>
               )}
             </Field>
           </SimpleGrid>
-        ) : (
-          <Text c="dimmed">No foreman is assigned to this site yet.</Text>
-        )}
-      </Panel>
-
-      <Panel title="Users on this site" description={`${site.users.length} assigned`} flush>
-        {site.users.length === 0 ? (
-          <Text c="dimmed" p="lg">
-            No users are assigned to this site yet.
+          <Text size="xs" c="dimmed">
+            This position is filled. A site can have only one {role}.
           </Text>
-        ) : (
-          <TableScrollContainer minWidth={480}>
-            <Table verticalSpacing="sm" horizontalSpacing="lg" highlightOnHover>
-              <TableThead>
-                <TableTr>
-                  <Th>First name</Th>
-                  <Th>Last name</Th>
-                  <Th>Email</Th>
-                  <Th>Role</Th>
-                </TableTr>
-              </TableThead>
-              <TableTbody>
-                {site.users.map((u) => (
-                  <TableTr key={u.id}>
-                    <TableTd>{u.firstName || "—"}</TableTd>
-                    <TableTd>{u.lastName || "—"}</TableTd>
-                    <TableTd>{u.email ?? "—"}</TableTd>
-                    <TableTd>
-                      {u.role ? (
-                        <Badge variant="light" tt="capitalize">
-                          {u.role}
-                        </Badge>
-                      ) : (
-                        <Text size="sm" c="dimmed">
-                          No role
-                        </Text>
-                      )}
-                    </TableTd>
-                  </TableTr>
-                ))}
-              </TableTbody>
-            </Table>
-          </TableScrollContainer>
-        )}
-      </Panel>
+        </Stack>
+      ) : (
+        <Stack gap="xs" align="flex-start">
+          <Text c="dimmed">No {role} is assigned to this site yet.</Text>
+          <LinkButton href={addHref} size="xs" variant="light">
+            Add {role}
+          </LinkButton>
+        </Stack>
+      )}
+    </Panel>
+  );
+}
 
-      <Panel title="Reports" description="Latest first" flush>
-        {siteReports.length === 0 ? (
+async function SiteDetails({ params }: PageProps) {
+  await requireRole("admin"); // check access before any query runs
+
+  const { id } = await params;
+  const [site, foreman, secretary, latest] = await Promise.all([
+    getSiteById(id),
+    getForemanBySiteId(id),
+    getSecretaryBySiteId(id),
+    getReportsBySiteId(id, 3),
+  ]);
+  if (!site) notFound();
+
+  return (
+    <AdminPage
+      title={site.name}
+      description="Site team and latest reports"
+      back={{ href: "/admin/sites", label: "Sites" }}
+      actions={
+        <Group gap="sm">
+          <SiteStatusBadge status={site.status} />
+          <LinkButton href={`/admin/sites/${site.id}/users`}>Users</LinkButton>
+        </Group>
+      }
+    >
+      <SimpleGrid cols={{ base: 1, md: 2 }}>
+        <PersonPanel
+          roleLabel="Foreman"
+          person={foreman}
+          addHref={`/admin/sites/${site.id}/users/new`}
+        />
+        <PersonPanel
+          roleLabel="Secretary"
+          person={secretary}
+          addHref={`/admin/sites/${site.id}/users/new`}
+        />
+      </SimpleGrid>
+
+      <Panel
+        title="Latest reports"
+        description="The three most recent"
+        action={
+          <LinkButton href={`/admin/sites/${site.id}/reports`} size="xs" variant="light">
+            All reports
+          </LinkButton>
+        }
+        flush
+      >
+        {latest.length === 0 ? (
           <Text c="dimmed" p="lg">
             No reports have been recorded for this site yet.
           </Text>
         ) : (
-          <TableScrollContainer minWidth={520}>
-            <Table verticalSpacing="sm" horizontalSpacing="lg" highlightOnHover>
-              <TableThead>
-                <TableTr>
-                  <Th>Report date</Th>
-                  <Th>Status</Th>
-                  <Th>Created</Th>
-                  <Th />
-                </TableTr>
-              </TableThead>
-              <TableTbody>
-                {siteReports.map((r) => (
-                  <TableTr key={r.id}>
-                    <TableTd fw={600}>{formatDate(r.createdAt)}</TableTd>
-                    <TableTd>
-                      <ReportStatusBadge status={r.status} />
-                    </TableTd>
-                    <TableTd>{formatDateTime(r.createdAt)}</TableTd>
-                    <TableTd ta="right">
-                      <LinkButton href={`/admin/reports/${r.id}`} size="xs" variant="light">
-                        Read
-                      </LinkButton>
-                    </TableTd>
-                  </TableTr>
-                ))}
-              </TableTbody>
-            </Table>
-          </TableScrollContainer>
+          <Stack gap={0}>
+            {latest.map((r, i) => (
+              <div key={r.id}>
+                {i > 0 && <Divider />}
+                <Group justify="space-between" px="lg" py="sm" wrap="nowrap">
+                  <div>
+                    <Text fw={600} size="sm">
+                      {formatDate(r.createdAt)}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      Created {formatDateTime(r.createdAt)}
+                    </Text>
+                  </div>
+                  <Group gap="sm" wrap="nowrap">
+                    <ReportStatusBadge status={r.status} />
+                    <LinkButton href={`/admin/reports/${r.id}`} size="xs" variant="light">
+                      Read
+                    </LinkButton>
+                  </Group>
+                </Group>
+              </div>
+            ))}
+          </Stack>
         )}
       </Panel>
     </AdminPage>

@@ -1,10 +1,10 @@
 "use server";
 
-import { asc, eq, isNull, ne, or} from "drizzle-orm";
+import { and, asc, eq, ilike, isNull, ne, or, sql} from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { db } from "@/db";
-import { profiles } from "@/db/schema";
+import { profiles, sites } from "@/db/schema";
 import { requireRole } from "@/lib/auth";
 
 import { getSiteUrl } from "@/lib/site-url";
@@ -14,21 +14,54 @@ import { authErrorMessage } from "@/lib/supabase/errors";
 import { authUsers } from "drizzle-orm/supabase";
 import { createAdminClient } from "@/lib/supabase/admin"; // adjust to your path
 import type { Role } from "@/types/user";
-
+import z from "zod"
 export type ActionResult = { ok: true; message: string } | { ok: false; error: string };
 
-export async function inviteUser(input: {
+
+// Keep the role list in sync with ROLES. Admins are never created through this form.
+const inviteSchema = z.object({
+  siteId: z.string(),
+  firstName: z.string().trim().min(1, "Enter a first name").max(60),
+  lastName: z.string().trim().min(1, "Enter a last name").max(60),
+  email: z.string().trim().toLowerCase().email("Enter a valid email"),
+  phone: z.string().trim().regex(/^(\+?[0-9\s-]{7,15})?$/, "Enter a valid phone number"),
+  role: z.enum(["foreman", "secretary"]),
+});
+
+export async function inviteSiteUser(input: {
+  siteId: string;
   email: string;
   firstName: string;
-  lastName:string;
-  phone:string,
-  role: Role;
+  lastName: string;
+  phone: string;
+  role: "foreman" | "secretary";
 }): Promise<ActionResult> {
-  await requireRole("admin");
+  await requireRole("admin"); // actions are public endpoints, so check first
 
+  // Don't trust the argument's shape.
+  const parsed = inviteSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid details" };
+  }
+  const { siteId, firstName, lastName, email, phone, role } = parsed.data;
+
+  const [site] = await db.select({ id: sites.id }).from(sites).where(eq(sites.id, siteId)).limit(1);
+  if (!site) return { ok: false, error: "Site not found" };
+
+  // A site has one foreman and one secretary. The unique indexes enforce it as well.
+  const [taken] = await db
+    .select({ id: profiles.id })
+    .from(profiles)
+    .where(and(eq(profiles.siteId, siteId), eq(profiles.role, role)))
+    .limit(1);
+  if (taken) return { ok: false, error: `This site already has a ${role}.` };
+
+  const admin = createAdminClient();
   const siteUrl = await getSiteUrl();
-  const { data, error } = await createAdminClient().auth.admin.inviteUserByEmail(input.email, {
-    data: { firstName: input.firstName,lastName:input.lastName,phone:input.phone },
+
+  const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
+    // snake_case keys: the signup trigger reads these to fill the profile.
+    data: { first_name: firstName, last_name: lastName, phone },
     redirectTo: `${siteUrl}/auth/confirm?next=/set-password`,
   });
   if (error) {
@@ -40,12 +73,36 @@ export async function inviteUser(input: {
     }
     return { ok: false, error: authErrorMessage(error, "invite") };
   }
+  const userId = data.user.id;
 
-  // The on_auth_user_created trigger has already created the profile; set its role.
-  await db.update(profiles).set({ role:input.role, firstName:input.firstName,lastName:input.lastName,phone:input.phone }).where(eq(profiles.id, data.user.id));
+  // The role has to live in app_metadata too (the proxy reads it), and an invite can't
+  // set it, so it is written right after. Don't leave a half-set-up account behind.
+  const { error: metaError } = await admin.auth.admin.updateUserById(userId, {
+    app_metadata: { role },
+  });
+  if (metaError) {
+    await admin.auth.admin.deleteUser(userId);
+    return { ok: false, error: "Could not set up the account. Please try again." };
+  }
 
+  // The trigger already created the profile; give it its role and its site.
+  try {
+    const updated = await db
+      .update(profiles)
+      .set({ role, siteId, firstName, lastName, phone })
+      .where(eq(profiles.id, userId))
+      .returning({ id: profiles.id });
+    if (updated.length === 0) throw new Error("Profile row is missing");
+  } catch {
+    await admin.auth.admin.deleteUser(userId);
+    return { ok: false, error: "Could not assign the user to the site. Please try again." };
+  }
+
+  revalidatePath(`/admin/sites/${siteId}`);
+  revalidatePath("/admin/sites");
   revalidatePath("/admin/users");
-  return { ok: true, message: `Invitation sent to ${input.email}` };
+  revalidatePath("/admin");
+  return { ok: true, message: `Invitation sent to ${email}` };
 }
 
 export async function changeRole(userId: string, role: Role): Promise<ActionResult> {
@@ -114,7 +171,33 @@ export async function createUser({
 // Every user except admins, oldest first. Users with no role yet are included, so a
 // new account waiting for a role can still be seen and assigned one.
 // This function does NOT check access: callers must call requireRole() first.
-export async function getUsers() {
+
+// % and _ are wildcards in LIKE, so a search for "100%" must not match everything.
+const escapeLike = (value: string) => value.replace(/[\\%_]/g, "\\$&");
+
+// Every user except admins, oldest first. With `search`, only users whose email or phone
+// contains the text (case-insensitive). This function does NOT check access: callers
+// must call requireRole() first.
+export async function getUsers({ search }: { search?: string } = {}) {
+  const conditions = [or(isNull(profiles.role), ne(profiles.role, "admin"))];
+
+  if (search) {
+    const term = `%${escapeLike(search)}%`;
+    const matches = [ilike(authUsers.email, term), ilike(profiles.phone, term)];
+
+    // A number typed as "0796 515 302" or "+254-796" should still find the stored
+    // phone whatever its spacing, so also compare digits only.
+    if (/^[\d\s+()-]+$/.test(search)) {
+      const digits = search.replace(/\D/g, "");
+      if (digits) {
+        matches.push(
+          sql`regexp_replace(${profiles.phone}, '[^0-9]', '', 'g') like ${`%${digits}%`}`,
+        );
+      }
+    }
+    conditions.push(or(...matches));
+  }
+
   const rows = await db
     .select({
       id: profiles.id,
@@ -127,11 +210,12 @@ export async function getUsers() {
     })
     .from(profiles)
     .innerJoin(authUsers, eq(authUsers.id, profiles.id))
-    .where(or(isNull(profiles.role), ne(profiles.role, "admin")))
+    .where(and(...conditions))
     .orderBy(asc(profiles.createdAt));
 
   // Dates become strings so the rows can be passed to a Client Component.
   return rows.map((r) => ({ ...r, lastSignInAt: r.lastSignInAt?.toISOString() ?? null }));
 }
 
+// export type AdminUser = Awaited<ReturnType<typeof getUsers>>[number];
 export type AdminUser = Awaited<ReturnType<typeof getUsers>>[number];
