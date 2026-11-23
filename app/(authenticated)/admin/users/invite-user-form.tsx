@@ -1,19 +1,14 @@
 "use client";
 
-import {
-  Button,
-  Group,
-  SimpleGrid,
-  Stack,
-  TextInput,
-} from "@mantine/core";
+import { Button, Group, SimpleGrid, Stack, TextInput } from "@mantine/core";
 import { isEmail, useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
-import type { SiteRole } from "@/lib/site-roles";
 import { inviteForeman, inviteSecretary } from "./actions";
+
+type SiteRole = "foreman" | "secretary";
 
 type Props = {
   siteId: string;
@@ -33,22 +28,17 @@ export function NewSiteUserForm({ siteId, role }: Props) {
       phone: "",
     },
     validate: {
-      firstName: (value) =>
-        value.trim() ? null : "Enter a first name",
-
-      lastName: (value) =>
-        value.trim() ? null : "Enter a last name",
-
+      firstName: (v) => (v.trim() ? null : "Enter a first name"),
+      lastName: (v) => (v.trim() ? null : "Enter a last name"),
       email: isEmail("Enter a valid email"),
-
-      phone: (value) =>
-        !value.trim() || /^\+?[0-9\s-]{7,15}$/.test(value.trim())
+      phone: (v) =>
+        !v.trim() || /^\+?[0-9\s-]{7,15}$/.test(v.trim())
           ? null
           : "Enter a valid phone number",
     },
   });
 
-  const onSubmit = form.onSubmit((values) => {
+  const onSubmit = form.onSubmit((values) =>
     startTransition(async () => {
       const input = {
         siteId,
@@ -69,7 +59,6 @@ export function NewSiteUserForm({ siteId, role }: Props) {
           title: "Could not add user",
           message: result.error,
         });
-
         return;
       }
 
@@ -80,8 +69,8 @@ export function NewSiteUserForm({ siteId, role }: Props) {
 
       router.push(`/admin/sites/${siteId}/users`);
       router.refresh();
-    });
-  });
+    }),
+  );
 
   return (
     <form onSubmit={onSubmit} noValidate>

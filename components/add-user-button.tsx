@@ -6,12 +6,14 @@ import { useRouter } from "next/navigation";
 type AddUserButtonProps = {
   href: string;
   label: string;
+  color: string;
   disabledReason?: string;
 };
 
 export function AddUserButton({
   href,
   label,
+  color,
   disabledReason,
 }: AddUserButtonProps) {
   const router = useRouter();
@@ -19,6 +21,7 @@ export function AddUserButton({
 
   const button = (
     <Button
+      color={color}
       disabled={disabled}
       onClick={() => router.push(href)}
     >

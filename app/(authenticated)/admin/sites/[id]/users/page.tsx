@@ -60,12 +60,12 @@ async function SiteUsers({ params }: PageProps) {
 
   if (!site) notFound();
 
+  const hasForeman = users.some((user) => user.role === "foreman");
+  const hasSecretary = users.some((user) => user.role === "secretary");
+
   const vacant = SITE_ROLES.filter(
     (role) => !users.some((user) => user.role === role),
   );
-
-  const canAddForeman = vacant.includes("foreman");
-  const canAddSecretary = vacant.includes("secretary");
 
   return (
     <AdminPage
@@ -80,20 +80,18 @@ async function SiteUsers({ params }: PageProps) {
           <AddUserButton
             label="Add foreman"
             href={`/admin/sites/${site.id}/users/new?role=foreman`}
+            color="blue"
             disabledReason={
-              canAddForeman
-                ? undefined
-                : "This site already has a foreman."
+              hasForeman ? "This site already has a foreman." : undefined
             }
           />
 
           <AddUserButton
             label="Add secretary"
             href={`/admin/sites/${site.id}/users/new?role=secretary`}
+            color="teal"
             disabledReason={
-              canAddSecretary
-                ? undefined
-                : "This site already has a secretary."
+              hasSecretary ? "This site already has a secretary." : undefined
             }
           />
         </Group>
