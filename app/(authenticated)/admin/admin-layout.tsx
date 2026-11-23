@@ -226,8 +226,8 @@ export function AdminLayout({ user, signOutAction, children }: AdminLayoutProps)
                   onClick={close}
                   aria-current={active ? "page" : undefined}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active
-                      ? "bg-amber-400/15 text-amber-300 ring-1 ring-inset ring-amber-400/30"
-                      : "text-slate-300 hover:bg-white/5 hover:text-white"
+                    ? "bg-amber-400/15 text-amber-300 ring-1 ring-inset ring-amber-400/30"
+                    : "text-slate-300 hover:bg-white/5 hover:text-white"
                     }`}
                 >
                   <NavIcon name={item.icon} />

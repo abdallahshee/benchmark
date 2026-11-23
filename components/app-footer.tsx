@@ -24,14 +24,14 @@ export function AppFooter() {
                             © <CurrentYear /> {APP_NAME}. All rights reserved.
                         </p>
 
-                        <p className="mt-1 text-xs text-slate-400">
+                        <p className="mt-1 text-sm text-slate-400">
                             Designed for better site management.
                         </p>
                     </div>
                 </div>
 
                 {/* Row 2: Developer Details */}
-                <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-slate-500/50 pt-4 text-xs text-slate-300">
+                <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-slate-500/50 pt-4 text-sm text-slate-300">
                     <span className="font-medium text-amber-300">
                         Handcrafted By:
                     </span>
