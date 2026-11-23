@@ -29,11 +29,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <ColorSchemeScript defaultColorScheme="auto" />
+    <ColorSchemeScript defaultColorScheme="light" />
       </head>
       <body className="min-h-full flex flex-col">
         <Providers>
-          <SignOutButton/>
+          {/* <SignOutButton/> */}
           {children}
           </Providers>
       </body>

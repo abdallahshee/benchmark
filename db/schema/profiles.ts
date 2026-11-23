@@ -23,7 +23,9 @@ export const profiles = pgTable(
     id: uuid("id")
       .primaryKey()
       .references(() => authUsers.id, { onDelete: "cascade" }),
-    fullName: text("full_name"),
+    firstName: text("first_name").notNull(),
+    lastName: text("last_name").notNull(),
+    phone: text("phone").notNull(),
     role: text("role", { enum: ROLES }), // nullable until an admin assigns one
     // The engineer (admin) has no site. Foremen and secretaries belong to one.
     siteId: uuid("site_id").references(() => sites.id, { onDelete: "set null" }),
@@ -44,6 +46,6 @@ export const profiles = pgTable(
 
 export type Profile = typeof profiles.$inferSelect;
 // export type User = StrictOmit<Profile, "id">;
-export type CurrentUser = Omit<Profile & {
+export type CurrentUser = Omit<Profile, "updatedAt" | "createdAt"> & {
   email: string | undefined;
-},"updatedAt">;
+};

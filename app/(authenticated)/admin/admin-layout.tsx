@@ -1,5 +1,6 @@
 "use client";
 
+import { requireRole } from "@/lib/auth";
 import { AppShell, Burger, Button, Group, NavLink, Stack, Text, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import Link from "next/link";
@@ -8,17 +9,23 @@ import type { ReactNode } from "react";
 
 export type NavItem = { label: string; href: string };
 
-type AppLayoutProps = {
-  title: string;
-  navItems: NavItem[];
-  user: { fullName: string | null; email: string | undefined };
+type AdminLayoutProps = {
+  user: { firstName: string | null; lastName: string | null; email: string | undefined };
   signOutAction: () => Promise<void>;
   children: ReactNode;
 };
 
-export function AppLayout({ title, navItems, user, signOutAction, children }: AppLayoutProps) {
+const navItems: NavItem[] = [
+  { label: "Dashboard", href: "/admin" },
+  { label: "Users", href: "/admin/users" },
+  { label: "Sites", href: "/admin/sites" },
+  { label: "Reports", href: "/admin/reports" },
+];
+
+export function AdminLayout({ user,signOutAction, children }: AdminLayoutProps) {
   const [opened, { toggle, close }] = useDisclosure();
   const pathname = usePathname();
+
 
   // Exact match for the section root, prefix match for deeper pages,
   // unless a more specific nav item matches better.
@@ -30,24 +37,52 @@ export function AppLayout({ title, navItems, user, signOutAction, children }: Ap
       ));
 
   return (
+    // <AppShell
+    //   header={{ height: 60 }}
+    //   navbar={{ width: 250, breakpoint: "sm", collapsed: { mobile: !opened } }}
+    //   padding="md"
+    // >
+
     <AppShell
-      header={{ height: 60 }}
-      navbar={{ width: 250, breakpoint: "sm", collapsed: { mobile: !opened } }}
-      padding="md"
-    >
+  header={{ height: 60 }}
+  navbar={{ width: 250, breakpoint: "sm", collapsed: { mobile: !opened } }}
+  padding="md"
+  styles={{
+    root: {
+      backgroundColor: "#ffffff",
+      color: "#171717",
+    },
+    header: {
+      backgroundColor: "#ffffff",
+      color: "#171717",
+      borderBottom: "1px solid #e5e7eb",
+    },
+    navbar: {
+      backgroundColor: "#ffffff",
+      color: "#171717",
+      borderRight: "1px solid #e5e7eb",
+    },
+    main: {
+      backgroundColor: "#f8fafc",
+      color: "#171717",
+      minHeight: "100vh",
+    },
+  }}
+>
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
           <Group gap="sm">
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" aria-label="Toggle navigation" />
-            <Title order={4} c="var(--mantine-primary-color-filled)">
-              {title}
+            {/* <Title order={4} c="var(--mantine-primary-color-filled)"> */}
+             <Title order={4} >
+              Admin
             </Title>
           </Group>
 
           <Group gap="md">
             <Stack gap={0} visibleFrom="xs">
               <Text size="sm" fw={500} ta="right">
-                {user.fullName ?? "User"}
+                {user.firstName ?? "User"}
               </Text>
               <Text size="xs" c="dimmed" ta="right">
                 {user.email}
@@ -79,7 +114,10 @@ export function AppLayout({ title, navItems, user, signOutAction, children }: Ap
         </Stack>
       </AppShell.Navbar>
 
-      <AppShell.Main bg="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8))">
+      
+            {/* <AppShell.Main bg="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8))"> */}
+
+      <AppShell.Main >
         {children}
       </AppShell.Main>
     </AppShell>

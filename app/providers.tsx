@@ -9,7 +9,7 @@ import { theme } from "./theme";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <MantineProvider theme={theme} defaultColorScheme="auto">
+    <MantineProvider theme={theme}      forceColorScheme="light">
       <DatesProvider settings={{ firstDayOfWeek: 1 }}>
         <Notifications position="top-right" />
         <ModalsProvider>{children}</ModalsProvider>

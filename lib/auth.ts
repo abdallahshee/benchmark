@@ -18,18 +18,27 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   if (!claims) return null;
 
   const [profile] = await db
-    .select({ fullName: profiles.fullName,siteId:profiles.siteId, role: profiles.role,updatedAt:profiles.updatedAt })
+    .select({
+      firstName: profiles.firstName,
+      lastName: profiles.lastName,
+      phone: profiles.phone,
+      siteId: profiles.siteId,
+      role: profiles.role,
+    })
     .from(profiles)
     .where(eq(profiles.id, claims.sub))
     .limit(1);
 
+  // A signed-in user can have no profile row (for example one created before the
+  // trigger existed). They get no role, so requireRole() denies them.
   return {
     id: claims.sub!,
-    siteId:profile.siteId??null,
     email: claims.email,
-    fullName: profile?.fullName ?? null,
+    firstName: profile?.firstName ?? "",
+    lastName: profile?.lastName ?? "",
+    phone: profile?.phone ?? "",
+    siteId: profile?.siteId ?? null,
     role: profile?.role ?? null,
-    createdAt:profile?.updatedAt
   };
 });
 
