@@ -4,8 +4,10 @@ import { and, asc, eq, ilike, isNull, ne, or, sql} from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { db } from "@/db";
-import { profiles, sites } from "@/db/schema";
+import { profiles, reports, sites } from "@/db/schema";
 import { requireRole } from "@/lib/auth";
+import { cache } from "react";
+
 
 import { getSiteUrl } from "@/lib/site-url";
 
@@ -15,15 +17,18 @@ import { authUsers } from "drizzle-orm/supabase";
 import { createAdminClient } from "@/lib/supabase/admin"; // adjust to your path
 import type { Role } from "@/types/user";
 import z from "zod"
-export type ActionResult = { ok: true; message: string } | { ok: false; error: string };
 
+export type ActionResult = { ok: true; message: string } | { ok: false; error: string };
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const isUuid = (value: string) => UUID_RE.test(value);
 
 // Keep the role list in sync with ROLES. Admins are never created through this form.
 const inviteSchema = z.object({
   siteId: z.string(),
   firstName: z.string().trim().min(1, "Enter a first name").max(60),
   lastName: z.string().trim().min(1, "Enter a last name").max(60),
-  email: z.string().trim().toLowerCase().email("Enter a valid email"),
+  email: z.string().trim().toLowerCase(),
   phone: z.string().trim().regex(/^(\+?[0-9\s-]{7,15})?$/, "Enter a valid phone number"),
   role: z.enum(["foreman", "secretary"]),
 });
@@ -217,5 +222,56 @@ export async function getUsers({ search }: { search?: string } = {}) {
   return rows.map((r) => ({ ...r, lastSignInAt: r.lastSignInAt?.toISOString() ?? null }));
 }
 
+
+// One user with their profile, site and a little activity. Returns null for a malformed or
+// unknown id. This function does NOT check access: callers must call requireRole() first.
+export async function getUserById(id: string) {
+  if (!isUuid(id)) return null; // A malformed ID would make Postgres throw
+
+  const [user] = await db
+    .select({
+      id: profiles.id,
+      firstName: profiles.firstName,
+      lastName: profiles.lastName,
+      phone: profiles.phone,
+      role: profiles.role,
+      createdAt: profiles.createdAt,
+      updatedAt: profiles.updatedAt,
+      email: authUsers.email,
+      lastSignInAt: authUsers.lastSignInAt,
+      siteId: sites.id,
+      siteName: sites.name,
+
+      // Plain SQL so Drizzle can't drop the table prefix inside the subqueries.
+      reportCount: sql<number>`
+        (
+          select count(*)::int
+          from ${reports} r
+          where r.created_by = ${profiles}.id
+        )
+      `,
+
+      // Epoch milliseconds, so the value is a plain number.
+      lastReportAt: sql<number | null>`
+        (
+          select (extract(epoch from max(r.created_at)) * 1000)::double precision
+          from ${reports} r
+          where r.created_by = ${profiles}.id
+        )
+      `,
+    })
+    .from(profiles)
+    .innerJoin(authUsers, eq(authUsers.id, profiles.id))
+    .leftJoin(sites, eq(sites.id, profiles.siteId))
+    .where(eq(profiles.id, id))
+    .limit(1);
+
+  return user ?? null;
+}
+
+export type UserDetails = NonNullable<Awaited<ReturnType<typeof getUserById>>>;
 // export type AdminUser = Awaited<ReturnType<typeof getUsers>>[number];
 export type AdminUser = Awaited<ReturnType<typeof getUsers>>[number];
+
+
+
