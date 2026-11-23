@@ -1,5 +1,6 @@
 "use client";
 
+import { EngineerArt } from "@/components/engineer-art";
 import { AppShell, Avatar, Badge, Burger, Button, Group, Stack, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import Link from "next/link";
@@ -236,7 +237,7 @@ export function AdminLayout({ user, signOutAction, children }: AdminLayoutProps)
             })}
           </nav>
 
-          <CraneArt />
+          <EngineerArt />
         </div>
       </AppShell.Navbar>
 

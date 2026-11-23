@@ -3,6 +3,7 @@ import { Suspense, type ReactNode } from "react";
 
 import { LoginForm } from "./login/login-form";
 import { AppFooter } from "@/components/app-footer";
+import { EngineerArt } from "@/components/engineer-art";
 
 // Change this to your product's name.
 const APP_NAME = "Benchmark";
@@ -77,16 +78,7 @@ function Feature({ index, title, children }: { index: number; title: string; chi
 // }
 
 // Construction engineer illustration. Hidden from screen readers.
-function EngineerArt() {
-  return (
-    <img
-      src="/images/engineer-on-site.png"
-      alt=""
-      aria-hidden="true"
-      className="pointer-events-none absolute bottom-0 right-0 w-full max-w-[760px] scale-x-[-1] object-contain object-bottom opacity-75"
-    />
-  );
-}
+
 
 export default function Home() {
   return (
