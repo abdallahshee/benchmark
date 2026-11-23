@@ -132,7 +132,7 @@ export function AdminLayout({ user, signOutAction, children }: AdminLayoutProps)
       styles={{
         header: {
           backgroundColor: "light-dark(#ffffff, #111827)",
-          borderBottom: "1px solid light-dark(#e5e7eb, #1f2937)",
+          borderBottom: "1px solid light-dark(#e2e8f0, #263449)",
         },
         navbar: {
           background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)",
@@ -154,13 +154,11 @@ export function AdminLayout({ user, signOutAction, children }: AdminLayoutProps)
               size="sm"
               aria-label="Toggle navigation"
             />
-            <div>
-              <Text size="xs" c="dimmed" fw={600} tt="uppercase" lh={1.2}>
-                Admin console
-              </Text>
-              <Text fw={700} fz="lg" lh={1.2}>
-                {current?.label ?? "Admin"}
-              </Text>
+
+            <div className="flex items-center">
+              <h2 className="text-lg font-bold leading-tight text-slate-900 dark:text-white">
+                Admin
+              </h2>
             </div>
           </Group>
 
@@ -169,20 +167,20 @@ export function AdminLayout({ user, signOutAction, children }: AdminLayoutProps)
               <Avatar color="yellow" radius="xl">
                 {initials}
               </Avatar>
+
               <Stack gap={0} visibleFrom="sm">
                 <Group gap={6} wrap="nowrap">
                   <Text size="sm" fw={600}>
                     {name}
                   </Text>
-                  <Badge size="xs" variant="light" color="yellow">
-                    Administrator
-                  </Badge>
                 </Group>
+
                 <Text size="xs" c="dimmed">
                   {user.email}
                 </Text>
               </Stack>
             </Group>
+
             <form action={signOutAction}>
               <Button type="submit" variant="default" size="xs">
                 Sign out
@@ -226,11 +224,10 @@ export function AdminLayout({ user, signOutAction, children }: AdminLayoutProps)
                   href={item.href}
                   onClick={close}
                   aria-current={active ? "page" : undefined}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    active
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active
                       ? "bg-amber-400/15 text-amber-300 ring-1 ring-inset ring-amber-400/30"
                       : "text-slate-300 hover:bg-white/5 hover:text-white"
-                  }`}
+                    }`}
                 >
                   <NavIcon name={item.icon} />
                   {item.label}
