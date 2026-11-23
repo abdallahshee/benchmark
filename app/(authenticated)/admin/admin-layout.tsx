@@ -182,7 +182,7 @@ export function AdminLayout({ user, signOutAction, children }: AdminLayoutProps)
             </Group>
 
             <form action={signOutAction}>
-              <Button type="submit" variant="default" size="xs">
+              <Button type="submit" variant="filled" color="red" size="sm">
                 Sign out
               </Button>
             </form>

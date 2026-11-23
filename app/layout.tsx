@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import "./globals.css";
 import { Providers } from "./providers";
-import { SignOutButton } from "@/components/sign-out-button";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,10 +16,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+
 export const metadata: Metadata = {
   title: "Benchmark",
   description: "A construction site management app",
 };
+
+
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -29,13 +32,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-    <ColorSchemeScript defaultColorScheme="light" />
+        <ColorSchemeScript defaultColorScheme="light" />
       </head>
-      <body className="min-h-full flex flex-col">
+
+      <body className="flex min-h-screen flex-col">
         <Providers>
-          {/* <SignOutButton/> */}
-          {children}
-          </Providers>
+          <div className="flex flex-1 flex-col">
+            {children}
+          </div>
+        
+        </Providers>
       </body>
     </html>
   );

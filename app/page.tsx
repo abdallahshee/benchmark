@@ -2,6 +2,7 @@ import { Paper, Text, Title } from "@mantine/core";
 import { Suspense, type ReactNode } from "react";
 
 import { LoginForm } from "./login/login-form";
+import { AppFooter } from "@/components/app-footer";
 
 // Change this to your product's name.
 const APP_NAME = "Benchmark";
@@ -47,31 +48,43 @@ function Feature({ index, title, children }: { index: number; title: string; chi
 }
 
 // Decorative skyline with a tower crane. Hidden from screen readers.
-function SkylineArt() {
+// function SkylineArt() {
+//   return (
+//     <svg
+//       aria-hidden="true"
+//       viewBox="0 0 520 320"
+//       className="pointer-events-none absolute bottom-0 right-0 w-[560px] max-w-full"
+//     >
+//       <g fill="#1e293b">
+//         <rect x="20" y="200" width="70" height="120" />
+//         <rect x="100" y="150" width="60" height="170" />
+//         <rect x="170" y="220" width="50" height="100" />
+//         <rect x="350" y="180" width="80" height="140" />
+//         <rect x="440" y="230" width="60" height="90" />
+//       </g>
+//       <g stroke="#fbbf24" fill="none" strokeLinecap="round" opacity="0.55">
+//         <rect x="255" y="40" width="10" height="280" strokeWidth="3" />
+//         <line x1="120" y1="48" x2="470" y2="48" strokeWidth="6" />
+//         <polyline points="120,48 260,12 470,48" strokeWidth="2" />
+//         <rect x="120" y="48" width="30" height="22" strokeWidth="3" />
+//         <rect x="266" y="52" width="22" height="16" strokeWidth="3" />
+//         <line x1="400" y1="48" x2="400" y2="140" strokeWidth="2" />
+//         <circle cx="400" cy="146" r="5" strokeWidth="2" />
+//         <rect x="380" y="152" width="40" height="24" strokeWidth="2" />
+//       </g>
+//     </svg>
+//   );
+// }
+
+// Construction engineer illustration. Hidden from screen readers.
+function EngineerArt() {
   return (
-    <svg
+    <img
+      src="/images/engineer-on-site.png"
+      alt=""
       aria-hidden="true"
-      viewBox="0 0 520 320"
-      className="pointer-events-none absolute bottom-0 right-0 w-[560px] max-w-full"
-    >
-      <g fill="#1e293b">
-        <rect x="20" y="200" width="70" height="120" />
-        <rect x="100" y="150" width="60" height="170" />
-        <rect x="170" y="220" width="50" height="100" />
-        <rect x="350" y="180" width="80" height="140" />
-        <rect x="440" y="230" width="60" height="90" />
-      </g>
-      <g stroke="#fbbf24" fill="none" strokeLinecap="round" opacity="0.55">
-        <rect x="255" y="40" width="10" height="280" strokeWidth="3" />
-        <line x1="120" y1="48" x2="470" y2="48" strokeWidth="6" />
-        <polyline points="120,48 260,12 470,48" strokeWidth="2" />
-        <rect x="120" y="48" width="30" height="22" strokeWidth="3" />
-        <rect x="266" y="52" width="22" height="16" strokeWidth="3" />
-        <line x1="400" y1="48" x2="400" y2="140" strokeWidth="2" />
-        <circle cx="400" cy="146" r="5" strokeWidth="2" />
-        <rect x="380" y="152" width="40" height="24" strokeWidth="2" />
-      </g>
-    </svg>
+      className="pointer-events-none absolute bottom-0 right-0 w-full max-w-[760px] scale-x-[-1] object-contain object-bottom opacity-75"
+    />
   );
 }
 
@@ -93,7 +106,8 @@ export default function Home() {
             backgroundSize: "40px 40px",
           }}
         />
-        <SkylineArt />
+        {/* <SkylineArt /> */}
+        <EngineerArt />
 
         <div className="relative z-10">
           <BrandMark />
@@ -101,7 +115,7 @@ export default function Home() {
 
         <div className="relative z-10 max-w-lg">
           <p className="text-sm font-semibold uppercase tracking-widest text-amber-400">
-            Construction site management
+            Sites Management
           </p>
           <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight xl:text-5xl">
             Every site. Every day. One clear picture.
@@ -129,7 +143,7 @@ export default function Home() {
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden">
             <BrandMark />
-            <p className="mt-2 text-sm text-amber-500">Construction site management</p>
+            <p className="mt-2 text-sm text-amber-500">Sites Management</p>
           </div>
 
           <Title order={2}>Welcome back</Title>
@@ -144,6 +158,9 @@ export default function Home() {
           </Paper>
         </div>
       </section>
+          <div className="col-span-full">
+        <AppFooter />
+      </div>
     </main>
   );
 }
