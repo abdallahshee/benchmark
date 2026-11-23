@@ -1,29 +1,38 @@
 "use client";
 
 import { Button, Tooltip } from "@mantine/core";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type AddUserButtonProps = {
   href: string;
-  // When set, the button is switched off and shows this text on hover or focus.
+  label: string;
   disabledReason?: string;
 };
 
-export function AddUserButton({ href, disabledReason }: AddUserButtonProps) {
+export function AddUserButton({
+  href,
+  label,
+  disabledReason,
+}: AddUserButtonProps) {
+  const router = useRouter();
+  const disabled = Boolean(disabledReason);
+
+  const button = (
+    <Button
+      disabled={disabled}
+      onClick={() => router.push(href)}
+    >
+      {label}
+    </Button>
+  );
+
   if (disabledReason) {
     return (
-      <Tooltip label={disabledReason} multiline w={260} withArrow events={{ hover: true, focus: true, touch: true }}>
-        {/* data-disabled keeps the tooltip working, which a truly disabled button would block. */}
-        <Button data-disabled onClick={(e) => e.preventDefault()}>
-          Add user
-        </Button>
+      <Tooltip label={disabledReason}>
+        <span>{button}</span>
       </Tooltip>
     );
   }
 
-  return (
-    <Button component={Link} href={href}>
-      Add user
-    </Button>
-  );
+  return button;
 }

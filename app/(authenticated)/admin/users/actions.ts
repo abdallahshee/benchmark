@@ -1,23 +1,22 @@
 "use server";
+import { and, eq } from "drizzle-orm";
 
-import { and, asc, eq, ilike, isNull, ne, or, sql} from "drizzle-orm";
-import { revalidatePath } from "next/cache";
-
-import { db } from "@/db";
-import { profiles, reports, sites } from "@/db/schema";
 import { requireRole } from "@/lib/auth";
-import { cache } from "react";
-
-
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getSiteUrl } from "@/lib/site-url";
+import { revalidatePath } from "next/cache";
+import type { SiteRole } from "@/lib/site-roles";
+import { profiles, reports, sites } from "@/db/schema";
 
+import { asc, ilike, isNull, ne, or, sql } from "drizzle-orm";
 import { authErrorMessage } from "@/lib/supabase/errors";
 
 import { authUsers } from "drizzle-orm/supabase";
-import { createAdminClient } from "@/lib/supabase/admin"; // adjust to your path
+
 import type { Role } from "@/types/user";
 import z from "zod"
 import { inviteStaffSchema } from "@/schemas/user";
+import { db } from "@/db";
 
 export type ActionResult = { ok: true; message: string } | { ok: false; error: string };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -29,6 +28,11 @@ const isUuid = (value: string) => UUID_RE.test(value);
 
 type SiteStaffRole = "foreman" | "secretary";
 
+
+
+
+// Use your existing ActionResult type and inviteStaffSchema.
+
 type InviteSiteUserInput = {
   siteId: string;
   email: string;
@@ -39,11 +43,10 @@ type InviteSiteUserInput = {
 
 async function inviteSiteUser(
   input: InviteSiteUserInput,
-  role: SiteStaffRole,
+  role: SiteRole,
 ): Promise<ActionResult> {
   await requireRole("admin");
 
-  // Validate input.
   const parsed = inviteStaffSchema.safeParse(input);
 
   if (!parsed.success) {
@@ -55,7 +58,6 @@ async function inviteSiteUser(
 
   const { siteId, firstName, lastName, email, phone } = parsed.data;
 
-  // Verify site exists.
   const [site] = await db
     .select({ id: sites.id })
     .from(sites)
@@ -66,7 +68,7 @@ async function inviteSiteUser(
     return { ok: false, error: "Site not found" };
   }
 
-  // Check whether this site already has someone assigned to this role.
+  // Check whether this particular role is already assigned.
   const [taken] = await db
     .select({ id: profiles.id })
     .from(profiles)
@@ -88,15 +90,17 @@ async function inviteSiteUser(
   const admin = createAdminClient();
   const siteUrl = await getSiteUrl();
 
-  // Send invitation.
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: {
-      first_name: firstName,
-      last_name: lastName,
-      phone,
+  const { data, error } = await admin.auth.admin.inviteUserByEmail(
+    email,
+    {
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+        phone,
+      },
+      redirectTo: `${siteUrl}/auth/confirm?next=/set-password`,
     },
-    redirectTo: `${siteUrl}/auth/confirm?next=/set-password`,
-  });
+  );
 
   if (error) {
     if (
@@ -124,13 +128,11 @@ async function inviteSiteUser(
 
   const userId = data.user.id;
 
-  // Set the role in Supabase app_metadata.
-  const { error: metaError } = await admin.auth.admin.updateUserById(
-    userId,
-    {
+  // Store role in Supabase app_metadata.
+  const { error: metaError } =
+    await admin.auth.admin.updateUserById(userId, {
       app_metadata: { role },
-    },
-  );
+    });
 
   if (metaError) {
     await admin.auth.admin.deleteUser(userId);
@@ -141,7 +143,7 @@ async function inviteSiteUser(
     };
   }
 
-  // Assign the role and site to the profile.
+  // Assign the site and role to the profile.
   try {
     const updated = await db
       .update(profiles)
@@ -167,8 +169,8 @@ async function inviteSiteUser(
     };
   }
 
-  // Revalidate affected pages.
   revalidatePath(`/admin/sites/${siteId}`);
+  revalidatePath(`/admin/sites/${siteId}/users`);
   revalidatePath("/admin/sites");
   revalidatePath("/admin/users");
   revalidatePath("/admin");
@@ -179,14 +181,14 @@ async function inviteSiteUser(
   };
 }
 
-// Invite a foreman.
+// Only this action can invite a foreman.
 export async function inviteForeman(
   input: InviteSiteUserInput,
 ): Promise<ActionResult> {
   return inviteSiteUser(input, "foreman");
 }
 
-// Invite a secretary.
+// Only this action can invite a secretary.
 export async function inviteSecretary(
   input: InviteSiteUserInput,
 ): Promise<ActionResult> {
@@ -195,7 +197,7 @@ export async function inviteSecretary(
 
 export async function changeRole(userId: string, role: Role): Promise<ActionResult> {
   await requireRole("admin");
-  
+
   const updated = await db
     .update(profiles)
     .set({ role })

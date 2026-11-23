@@ -1,29 +1,26 @@
 "use client";
 
-import { Button, Group, SimpleGrid, Stack, TextInput } from "@mantine/core";
+import {
+  Button,
+  Group,
+  SimpleGrid,
+  Stack,
+  TextInput,
+} from "@mantine/core";
 import { isEmail, useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
+import type { SiteRole } from "@/lib/site-roles";
 import { inviteForeman, inviteSecretary } from "./actions";
 
-type InviteInput = {
-  siteId: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-};
-
-type SiteRole = "foreman" | "secretary";
-
-type NewSiteUserFormProps = {
+type Props = {
   siteId: string;
   role: SiteRole;
 };
 
-function NewSiteUserForm({ siteId, role }: NewSiteUserFormProps) {
+export function NewSiteUserForm({ siteId, role }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -36,19 +33,24 @@ function NewSiteUserForm({ siteId, role }: NewSiteUserFormProps) {
       phone: "",
     },
     validate: {
-      firstName: (v) => (v.trim() ? null : "Enter a first name"),
-      lastName: (v) => (v.trim() ? null : "Enter a last name"),
+      firstName: (value) =>
+        value.trim() ? null : "Enter a first name",
+
+      lastName: (value) =>
+        value.trim() ? null : "Enter a last name",
+
       email: isEmail("Enter a valid email"),
-      phone: (v) =>
-        !v.trim() || /^\+?[0-9\s-]{7,15}$/.test(v.trim())
+
+      phone: (value) =>
+        !value.trim() || /^\+?[0-9\s-]{7,15}$/.test(value.trim())
           ? null
           : "Enter a valid phone number",
     },
   });
 
-  const onSubmit = form.onSubmit((values) =>
+  const onSubmit = form.onSubmit((values) => {
     startTransition(async () => {
-      const input: InviteInput = {
+      const input = {
         siteId,
         firstName: values.firstName.trim(),
         lastName: values.lastName.trim(),
@@ -67,6 +69,7 @@ function NewSiteUserForm({ siteId, role }: NewSiteUserFormProps) {
           title: "Could not add user",
           message: result.error,
         });
+
         return;
       }
 
@@ -75,10 +78,10 @@ function NewSiteUserForm({ siteId, role }: NewSiteUserFormProps) {
         message: result.message,
       });
 
-      router.push(`/admin/sites/${siteId}`);
+      router.push(`/admin/sites/${siteId}/users`);
       router.refresh();
-    }),
-  );
+    });
+  });
 
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -132,14 +135,4 @@ function NewSiteUserForm({ siteId, role }: NewSiteUserFormProps) {
       </Stack>
     </form>
   );
-}
-
-// Foreman invitation form
-export function NewForemanForm({ siteId }: { siteId: string }) {
-  return <NewSiteUserForm siteId={siteId} role="foreman" />;
-}
-
-// Secretary invitation form
-export function NewSecretaryForm({ siteId }: { siteId: string }) {
-  return <NewSiteUserForm siteId={siteId} role="secretary" />;
 }

@@ -8,28 +8,37 @@ import {
   TableThead,
   TableTr,
   Text,
+  Group,
 } from "@mantine/core";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { AdminPage, EmptyState, Panel, Th } from "@/components/admin-ui";
+import { AddUserButton } from "@/components/add-user-button";
 import { requireRole } from "@/lib/auth";
 import { displayName } from "@/lib/formats";
 import { SITE_ROLES } from "@/lib/site-roles";
-import { AddUserButton } from "@/components/add-user-button";
+
 import { getSiteById } from "../action";
 import { getUsersBySiteId } from "../../actions";
 
-export const metadata: Metadata = { title: "Site users" };
+export const metadata: Metadata = {
+  title: "Site users",
+};
 
-type PageProps = { params: Promise<{ id: string }> };
+type PageProps = {
+  params: Promise<{ id: string }>;
+};
 
 export default function SiteUsersPage({ params }: PageProps) {
   return (
     <Suspense
       fallback={
-        <AdminPage title="Users" back={{ href: "/admin/sites", label: "Sites" }}>
+        <AdminPage
+          title="Users"
+          back={{ href: "/admin/sites", label: "Sites" }}
+        >
           <Skeleton height={320} radius="md" />
         </AdminPage>
       }
@@ -40,30 +49,54 @@ export default function SiteUsersPage({ params }: PageProps) {
 }
 
 async function SiteUsers({ params }: PageProps) {
-  await requireRole("admin"); // check access before any query runs
+  await requireRole("admin");
 
   const { id } = await params;
-  const [site, users] = await Promise.all([getSiteById(id), getUsersBySiteId(id)]);
+
+  const [site, users] = await Promise.all([
+    getSiteById(id),
+    getUsersBySiteId(id),
+  ]);
+
   if (!site) notFound();
 
-  // Roles this site doesn't have yet. When none are left, adding is switched off.
-  const vacant = SITE_ROLES.filter((r) => !users.some((u) => u.role === r));
-  const addHref = `/admin/sites/${site.id}/users/new${vacant.length === 1 ? `?role=${vacant[0]}` : ""}`;
+  const vacant = SITE_ROLES.filter(
+    (role) => !users.some((user) => user.role === role),
+  );
+
+  const canAddForeman = vacant.includes("foreman");
+  const canAddSecretary = vacant.includes("secretary");
 
   return (
     <AdminPage
       title="Users"
       description={`People assigned to ${site.name}`}
-      back={{ href: `/admin/sites/${site.id}`, label: site.name }}
+      back={{
+        href: `/admin/sites/${site.id}`,
+        label: site.name,
+      }}
       actions={
-        <AddUserButton
-          href={addHref}
-          disabledReason={
-            vacant.length === 0
-              ? "This site already has a foreman and a secretary. A site can have only one of each."
-              : undefined
-          }
-        />
+        <Group gap="sm">
+          <AddUserButton
+            label="Add foreman"
+            href={`/admin/sites/${site.id}/users/new?role=foreman`}
+            disabledReason={
+              canAddForeman
+                ? undefined
+                : "This site already has a foreman."
+            }
+          />
+
+          <AddUserButton
+            label="Add secretary"
+            href={`/admin/sites/${site.id}/users/new?role=secretary`}
+            disabledReason={
+              canAddSecretary
+                ? undefined
+                : "This site already has a secretary."
+            }
+          />
+        </Group>
       }
     >
       <Panel
@@ -78,11 +111,15 @@ async function SiteUsers({ params }: PageProps) {
         {users.length === 0 ? (
           <EmptyState
             title="No users on this site yet"
-            text="Use Add user to invite the site's foreman and secretary."
+            text="Use Add foreman or Add secretary to invite the site's staff."
           />
         ) : (
           <TableScrollContainer minWidth={560}>
-            <Table verticalSpacing="sm" horizontalSpacing="lg" highlightOnHover>
+            <Table
+              verticalSpacing="sm"
+              horizontalSpacing="lg"
+              highlightOnHover
+            >
               <TableThead>
                 <TableTr>
                   <Th>Name</Th>
@@ -91,16 +128,26 @@ async function SiteUsers({ params }: PageProps) {
                   <Th>Role</Th>
                 </TableTr>
               </TableThead>
+
               <TableTbody>
-                {users.map((u) => (
-                  <TableTr key={u.id}>
-                    <TableTd fw={600}>{displayName(u)}</TableTd>
-                    <TableTd>{u.email ?? "—"}</TableTd>
-                    <TableTd>{u.phone || "—"}</TableTd>
+                {users.map((user) => (
+                  <TableTr key={user.id}>
+                    <TableTd fw={600}>
+                      {displayName(user)}
+                    </TableTd>
+
                     <TableTd>
-                      {u.role ? (
+                      {user.email ?? "—"}
+                    </TableTd>
+
+                    <TableTd>
+                      {user.phone || "—"}
+                    </TableTd>
+
+                    <TableTd>
+                      {user.role ? (
                         <Badge variant="light" tt="capitalize">
-                          {u.role}
+                          {user.role}
                         </Badge>
                       ) : (
                         <Text size="sm" c="dimmed">

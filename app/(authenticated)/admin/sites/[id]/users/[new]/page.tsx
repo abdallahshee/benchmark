@@ -1,47 +1,85 @@
 import { Skeleton } from "@mantine/core";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { AdminPage, Panel } from "@/components/admin-ui";
 import { requireRole } from "@/lib/auth";
-import { getSiteById } from "../../action";
+import { SITE_ROLES, type SiteRole } from "@/lib/site-roles";
+
 import { NewSiteUserForm } from "@/app/(authenticated)/admin/users/invite-user-form";
+import { getSiteById } from "../../action";
 
+export const metadata: Metadata = {
+  title: "Add site staff",
+};
 
-export const metadata: Metadata = { title: "Add user" };
+type PageProps = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ role?: string }>;
+};
 
-type PageProps = { params: Promise<{ id: string }> };
-
-export default function NewSiteUserPage({ params }: PageProps) {
+export default function NewSiteUserPage({
+  params,
+  searchParams,
+}: PageProps) {
   return (
     <Suspense
       fallback={
-        <AdminPage title="Add user" back={{ href: "/admin/sites", label: "Sites" }}>
+        <AdminPage
+          title="Add staff"
+          back={{ href: "/admin/sites", label: "Sites" }}
+        >
           <Skeleton height={320} radius="md" />
         </AdminPage>
       }
     >
-      <NewSiteUser params={params} />
+      <NewSiteUser
+        params={params}
+        searchParams={searchParams}
+      />
     </Suspense>
   );
 }
 
-async function NewSiteUser({ params }: PageProps) {
-  await requireRole("admin"); // check access before any query runs
+async function NewSiteUser({
+  params,
+  searchParams,
+}: PageProps) {
+  await requireRole("admin");
 
-  const { id } = await params;
+  const [{ id }, { role }] = await Promise.all([
+    params,
+    searchParams,
+  ]);
+
+  if (!role || !SITE_ROLES.includes(role as SiteRole)) {
+    redirect(`/admin/sites/${id}/users`);
+  }
+
   const site = await getSiteById(id);
+
   if (!site) notFound();
+
+  const selectedRole = role as SiteRole;
 
   return (
     <AdminPage
-      title="New Staff"
-      description={`Invite a foreman or secretary to ${site.name}.`}
-      back={{ href: `/admin/sites/${site.id}`, label: site.name }}
+      title={`Add ${selectedRole}`}
+      description={`Invite a ${selectedRole} to ${site.name}.`}
+      back={{
+        href: `/admin/sites/${site.id}/users`,
+        label: "Site users",
+      }}
     >
-      <Panel title="User details" description="They get an email to set up their account.">
-        <NewSiteUserForm siteId={site.id} />
+      <Panel
+        title={`${selectedRole === "foreman" ? "Foreman" : "Secretary"} details`}
+        description="They will receive an email to set up their account."
+      >
+        <NewSiteUserForm
+          siteId={site.id}
+          role={selectedRole}
+        />
       </Panel>
     </AdminPage>
   );
