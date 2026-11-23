@@ -23,6 +23,7 @@ import { AnchorLink } from "@/components/anchor-link";
 import { requireRole } from "@/lib/auth";
 import { displayName, formatDateTime } from "@/lib/formats";
 import { getDashboardData } from "./dashboard.query";
+import { DefinedStatCard } from "@/components/stat-card";
 
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -102,16 +103,34 @@ async function Dashboard() {
 
   return (
     <>
-      <SimpleGrid cols={{ base: 1, sm: 3 }}>
-        <StatCard label="Sites" value={siteCount} href="/admin/sites" linkText="View all sites →" />
-        <StatCard
-          label="Reports"
-          value={reportCount}
-          href="/admin/reports"
-          linkText="View all reports →"
-        />
-        <StatCard label="Users" value={userCount} href="/admin/users" linkText="Manage users →" />
-      </SimpleGrid>
+<SimpleGrid cols={{ base: 1, sm: 3 }}>
+  <DefinedStatCard
+    label="Sites"
+    value={siteCount}
+    icon="sites"
+    color="blue"
+    href="/admin/sites"
+    linkText="View all sites →"
+  />
+
+ <DefinedStatCard
+    label="Reports"
+    value={reportCount}
+    icon="reports"
+    color="yellow"
+    href="/admin/reports"
+    linkText="View all reports →"
+  />
+
+<DefinedStatCard
+    label="Users"
+    value={userCount}
+    icon="users"
+    color="teal"
+    href="/admin/users"
+    linkText="Manage users →"
+  />
+</SimpleGrid>
 
       <SimpleGrid cols={{ base: 1, md: 2 }}>
         <Paper withBorder p="lg">

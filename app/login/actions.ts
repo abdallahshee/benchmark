@@ -1,12 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-
 import { createClient } from "@/lib/supabase/server";
 
-
 import { redirect } from "next/navigation";
-import { safeRedirectPath } from "@/lib/safe-redirect";
 import { authErrorMessage } from "@/lib/supabase/errors";
 import { Role, ROLE_LABELS } from "@/types/user";
 
@@ -50,6 +46,6 @@ export async function signIn(input: Credentials): Promise<AuthState> {
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/login");
+  redirect("/");
 }
 

@@ -1,35 +1,24 @@
 import {
-  Badge,
-  Paper,
   Skeleton,
-  Stack,
   Table,
   TableScrollContainer,
   TableTbody,
   TableTd,
-  TableTh,
   TableThead,
   TableTr,
-  Text,
-  Title,
 } from "@mantine/core";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { AdminPage, EmptyState, Panel, ReportStatusBadge, Th } from "@/components/admin-ui";
 import { AnchorLink } from "@/components/anchor-link";
 import { LinkButton } from "@/components/link-button";
 import { requireRole } from "@/lib/auth";
-import { ReportsFilter } from "./reports-filter";
-import { getReports, parseDay } from "./actions";
 import { displayName, formatDateTime } from "@/lib/formats";
+import { getReports, parseDay } from "./actions";
+import { ReportsFilter } from "./reports-filter";
 
 export const metadata: Metadata = { title: "Reports" };
-
-const REPORT_STATUS_COLOR: Record<string, string> = {
-  draft: "gray",
-  submitted: "green",
-  reopened: "yellow",
-};
 
 type PageProps = {
   searchParams: Promise<{ from?: string | string[]; to?: string | string[] }>;
@@ -37,15 +26,15 @@ type PageProps = {
 
 export default function AdminReportsPage({ searchParams }: PageProps) {
   return (
-    <Stack component="main" gap="lg" p="xl" className="mx-auto w-full max-w-5xl flex-1">
-      {/* <AnchorLink href="/admin" size="sm">
-        ← Dashboard
-      </AnchorLink> */}
-      <Title order={1}>Reports</Title>
-      <Suspense fallback={<Skeleton height={300} />}>
+    <AdminPage
+      title="Reports"
+      description="Daily reports from every site, newest first."
+      back={{ href: "/admin", label: "Dashboard" }}
+    >
+      <Suspense fallback={<Skeleton height={320} radius="md" />}>
         <Reports searchParams={searchParams} />
       </Suspense>
-    </Stack>
+    </AdminPage>
   );
 }
 
@@ -61,71 +50,60 @@ async function Reports({ searchParams }: PageProps) {
   const filtered = Boolean(from || to);
 
   return (
-    <>
-      {/* key remounts the picker when the URL changes, so it always shows the applied range */}
-      <ReportsFilter key={`${from ?? ""}_${to ?? ""}`} from={from} to={to} />
-
-      <Paper withBorder p="lg">
-        {rows.length === 0 ? (
-          <Text c="dimmed">
-            {filtered
-              ? "No reports were created in this date range."
-              : "No reports have been recorded yet."}
-          </Text>
-        ) : (
-          <>
-            <Text size="sm" c="dimmed" mb="md">
-              {rows.length} {rows.length === 1 ? "report" : "reports"}, newest first, then by site
-              name.
-            </Text>
-            <TableScrollContainer minWidth={640}>
-              <Table verticalSpacing="sm" highlightOnHover>
-                <TableThead>
-                  <TableTr>
-                    <TableTh>Site</TableTh>
-                    <TableTh>Created by</TableTh>
-                    <TableTh>Created</TableTh>
-                    <TableTh>Status</TableTh>
-                    <TableTh />
-                  </TableTr>
-                </TableThead>
-                <TableTbody>
-                  {rows.map((r) => (
-                    <TableTr key={r.id}>
-                      <TableTd>
-                        <AnchorLink href={`/admin/reports/${r.id}`} size="sm" fw={500}>
-                          {r.siteName}
-                        </AnchorLink>
-                      </TableTd>
-                      <TableTd>
-                        {displayName({
-                          firstName: r.creatorFirstName,
-                          lastName: r.creatorLastName,
-                        })}
-                      </TableTd>
-                      <TableTd>{formatDateTime(r.createdAt)}</TableTd>
-                      <TableTd>
-                        <Badge
-                          variant="light"
-                          color={REPORT_STATUS_COLOR[r.status] ?? "gray"}
-                          tt="capitalize"
-                        >
-                          {r.status}
-                        </Badge>
-                      </TableTd>
-                      <TableTd ta="right">
-                        <LinkButton href={`/admin/reports/${r.id}`} size="xs" variant="light">
-                          Read
-                        </LinkButton>
-                      </TableTd>
-                    </TableTr>
-                  ))}
-                </TableTbody>
-              </Table>
-            </TableScrollContainer>
-          </>
-        )}
-      </Paper>
-    </>
+    <Panel
+      title="All reports"
+      description={`${rows.length} ${rows.length === 1 ? "report" : "reports"}${filtered ? " in this range" : ""}`}
+      // key remounts the picker when the URL changes, so it always shows the applied range
+      action={<ReportsFilter key={`${from ?? ""}_${to ?? ""}`} from={from} to={to} />}
+      flush
+    >
+      {rows.length === 0 ? (
+        <EmptyState
+          title={filtered ? "No reports in this range" : "No reports yet"}
+          text={
+            filtered
+              ? "Try a wider date range, or clear the filter."
+              : "Reports will appear here as foremen submit them."
+          }
+        />
+      ) : (
+        <TableScrollContainer minWidth={640}>
+          <Table verticalSpacing="sm" horizontalSpacing="lg" highlightOnHover>
+            <TableThead>
+              <TableTr>
+                <Th>Site</Th>
+                <Th>Created by</Th>
+                <Th>Created</Th>
+                <Th>Status</Th>
+                <Th />
+              </TableTr>
+            </TableThead>
+            <TableTbody>
+              {rows.map((r) => (
+                <TableTr key={r.id}>
+                  <TableTd>
+                    <AnchorLink href={`/admin/reports/${r.id}`} size="sm" fw={600}>
+                      {r.siteName}
+                    </AnchorLink>
+                  </TableTd>
+                  <TableTd>
+                    {displayName({ firstName: r.creatorFirstName, lastName: r.creatorLastName })}
+                  </TableTd>
+                  <TableTd>{formatDateTime(r.createdAt)}</TableTd>
+                  <TableTd>
+                    <ReportStatusBadge status={r.status} />
+                  </TableTd>
+                  <TableTd ta="right">
+                    <LinkButton href={`/admin/reports/${r.id}`} size="xs" variant="light">
+                      Read
+                    </LinkButton>
+                  </TableTd>
+                </TableTr>
+              ))}
+            </TableTbody>
+          </Table>
+        </TableScrollContainer>
+      )}
+    </Panel>
   );
 }

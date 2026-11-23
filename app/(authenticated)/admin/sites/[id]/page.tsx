@@ -2,57 +2,51 @@ import {
   Anchor,
   Badge,
   Group,
-  Paper,
   SimpleGrid,
   Skeleton,
-  Stack,
   Table,
   TableScrollContainer,
   TableTbody,
   TableTd,
-  TableTh,
   TableThead,
   TableTr,
   Text,
-  Title,
 } from "@mantine/core";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { AnchorLink } from "@/components/anchor-link";
+import {
+  AdminPage,
+  Avatar,
+  Field,
+  Panel,
+  ReportStatusBadge,
+  SiteStatusBadge,
+  StatCard,
+  Th,
+  initialsOf,
+} from "@/components/admin-ui";
+import { LinkButton } from "@/components/link-button";
 import { requireRole } from "@/lib/auth";
-import { formatDate, formatDateTime } from "@/lib/formats";
+import { displayName, formatDate, formatDateTime } from "@/lib/formats";
 import { getForemanBySiteId, getReportsBySiteId, getSiteById } from "./action";
-import { displayName } from "@/lib/formats";
 
 export const metadata: Metadata = { title: "Site details" };
-
-const SITE_STATUS_COLOR: Record<string, string> = {
-  active: "green",
-  on_hold: "yellow",
-  completed: "blue",
-  archived: "gray",
-};
-
-const REPORT_STATUS_COLOR: Record<string, string> = {
-  draft: "gray",
-  submitted: "green",
-  reopened: "yellow",
-};
 
 type PageProps = { params: Promise<{ id: string }> };
 
 export default function SiteDetailsPage({ params }: PageProps) {
   return (
-    <Stack component="main" gap="lg" p="xl" className="mx-auto w-full max-w-5xl flex-1">
-      <AnchorLink href="/admin/sites" size="sm">
-        ← Sites
-      </AnchorLink>
-      <Suspense fallback={<Skeleton height={400} />}>
-        <SiteDetails params={params} />
-      </Suspense>
-    </Stack>
+    <Suspense
+      fallback={
+        <AdminPage title="Site" back={{ href: "/admin/sites", label: "Sites" }}>
+          <Skeleton height={400} radius="md" />
+        </AdminPage>
+      }
+    >
+      <SiteDetails params={params} />
+    </Suspense>
   );
 }
 
@@ -68,106 +62,83 @@ async function SiteDetails({ params }: PageProps) {
   if (!site) notFound();
 
   return (
-    <>
-      <Group justify="space-between" align="center">
-        <Title order={1}>{site.name}</Title>
-        <Badge
-          size="lg"
-          variant="light"
-          color={SITE_STATUS_COLOR[site.status] ?? "gray"}
-          tt="capitalize"
-        >
-          {site.status.replace("_", " ")}
-        </Badge>
-      </Group>
-
+    <AdminPage
+      title={site.name}
+      description="Site overview, team and reports"
+      back={{ href: "/admin/sites", label: "Sites" }}
+      actions={<SiteStatusBadge status={site.status} />}
+    >
       <SimpleGrid cols={{ base: 1, sm: 3 }}>
-        <Paper withBorder p="lg">
-          <Text size="sm" c="dimmed" fw={600} tt="uppercase">
-            Users
-          </Text>
-          <Text fz={32} fw={700} lh={1.2}>
-            {site.users.length}
-          </Text>
-        </Paper>
-
-        <Paper withBorder p="lg">
-          <Text size="sm" c="dimmed" fw={600} tt="uppercase">
-            Reports
-          </Text>
-          <Text fz={32} fw={700} lh={1.2}>
-            {site.reportCount}
-          </Text>
-        </Paper>
-
-        <Paper withBorder p="lg">
-          <Text size="sm" c="dimmed" fw={600} tt="uppercase">
-            Today&apos;s report
-          </Text>
-          <Badge
-            mt="xs"
-            size="lg"
-            variant="light"
-            color={site.hasTodayReport ? "green" : site.status === "active" ? "red" : "gray"}
-          >
-            {site.hasTodayReport ? "Submitted today" : "None yet"}
-          </Badge>
-        </Paper>
+        <StatCard label="Users" value={site.users.length} icon="users" color="teal" />
+        <StatCard label="Reports" value={site.reportCount} icon="reports" color="blue" />
+        <StatCard
+          label="Today's report"
+          value={site.hasTodayReport ? "Reported" : "Not yet"}
+          icon="check"
+          color={site.hasTodayReport ? "green" : "yellow"}
+          valueColor={site.hasTodayReport ? "green" : site.status === "active" ? "red" : "dimmed"}
+        />
       </SimpleGrid>
 
-      <Paper withBorder p="lg">
-        <Title order={2} size="h4" mb="md">
-          Foreman
-        </Title>
+      <Panel title="Foreman" description="The person who records this site's daily report">
         {foreman ? (
-          <SimpleGrid cols={{ base: 1, sm: 3 }}>
-            <Stack gap={2}>
-              
-              <Text size="xs" c="dimmed" fw={600} tt="uppercase">
-                Name
-              </Text>
-              <Text>{displayName(foreman)}</Text>
-            </Stack>
-            <Stack gap={2}>
-              <Text size="xs" c="dimmed" fw={600} tt="uppercase">
-                Phone
-              </Text>
-              {foreman.phone ? <Anchor href={`tel:${foreman.phone}`}>{foreman.phone}</Anchor> : <Text>—</Text>}
-            </Stack>
-            <Stack gap={2}>
-              <Text size="xs" c="dimmed" fw={600} tt="uppercase">
-                Email
-              </Text>
-              {foreman.email ? <Anchor href={`mailto:${foreman.email}`}>{foreman.email}</Anchor> : <Text>—</Text>}
-            </Stack>
+          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg">
+            <Group gap="sm" wrap="nowrap">
+              <Avatar color="yellow" radius="xl" size="lg">
+                {initialsOf(foreman)}
+              </Avatar>
+              <div>
+                <Text fw={600}>{displayName(foreman)}</Text>
+                <Text size="sm" c="dimmed">
+                  Site foreman
+                </Text>
+              </div>
+            </Group>
+            <Field label="Phone">
+              {foreman.phone ? (
+                <Anchor href={`tel:${foreman.phone}`} size="sm">
+                  {foreman.phone}
+                </Anchor>
+              ) : (
+                <Text size="sm">—</Text>
+              )}
+            </Field>
+            <Field label="Email">
+              {foreman.email ? (
+                <Anchor href={`mailto:${foreman.email}`} size="sm">
+                  {foreman.email}
+                </Anchor>
+              ) : (
+                <Text size="sm">—</Text>
+              )}
+            </Field>
           </SimpleGrid>
         ) : (
           <Text c="dimmed">No foreman is assigned to this site yet.</Text>
         )}
-      </Paper>
+      </Panel>
 
-      <Paper withBorder p="lg">
-        <Title order={2} size="h4" mb="md">
-          Users on this site
-        </Title>
+      <Panel title="Users on this site" description={`${site.users.length} assigned`} flush>
         {site.users.length === 0 ? (
-          <Text c="dimmed">No users are assigned to this site yet.</Text>
+          <Text c="dimmed" p="lg">
+            No users are assigned to this site yet.
+          </Text>
         ) : (
           <TableScrollContainer minWidth={480}>
-            <Table verticalSpacing="sm" highlightOnHover>
+            <Table verticalSpacing="sm" horizontalSpacing="lg" highlightOnHover>
               <TableThead>
                 <TableTr>
-                  <TableTh>Firstname</TableTh>
-                    <TableTh>Lastname</TableTh>
-                  <TableTh>Email</TableTh>
-                  <TableTh>Role</TableTh>
+                  <Th>First name</Th>
+                  <Th>Last name</Th>
+                  <Th>Email</Th>
+                  <Th>Role</Th>
                 </TableTr>
               </TableThead>
               <TableTbody>
                 {site.users.map((u) => (
                   <TableTr key={u.id}>
-                    <TableTd>{u.firstName ?? "—"}</TableTd>
-                    <TableTd>{u.lastName ?? "—"}</TableTd>
+                    <TableTd>{u.firstName || "—"}</TableTd>
+                    <TableTd>{u.lastName || "—"}</TableTd>
                     <TableTd>{u.email ?? "—"}</TableTd>
                     <TableTd>
                       {u.role ? (
@@ -186,48 +157,44 @@ async function SiteDetails({ params }: PageProps) {
             </Table>
           </TableScrollContainer>
         )}
-      </Paper>
+      </Panel>
 
-      <Paper withBorder p="lg">
-        <Title order={2} size="h4" mb="xs">
-          Reports
-        </Title>
-        <Text size="sm" c="dimmed" mb="md">
-          Latest first.
-        </Text>
+      <Panel title="Reports" description="Latest first" flush>
         {siteReports.length === 0 ? (
-          <Text c="dimmed">No reports have been recorded for this site yet.</Text>
+          <Text c="dimmed" p="lg">
+            No reports have been recorded for this site yet.
+          </Text>
         ) : (
-          <TableScrollContainer minWidth={480}>
-            <Table verticalSpacing="sm" highlightOnHover>
+          <TableScrollContainer minWidth={520}>
+            <Table verticalSpacing="sm" horizontalSpacing="lg" highlightOnHover>
               <TableThead>
                 <TableTr>
-                  <TableTh>Report date</TableTh>
-                  <TableTh>Status</TableTh>
-                  <TableTh>Created</TableTh>
+                  <Th>Report date</Th>
+                  <Th>Status</Th>
+                  <Th>Created</Th>
+                  <Th />
                 </TableTr>
               </TableThead>
               <TableTbody>
                 {siteReports.map((r) => (
                   <TableTr key={r.id}>
-                    <TableTd>{formatDate(r.createdAt)}</TableTd>
+                    <TableTd fw={600}>{formatDate(r.createdAt)}</TableTd>
                     <TableTd>
-                      <Badge
-                        variant="light"
-                        color={REPORT_STATUS_COLOR[r.status] ?? "gray"}
-                        tt="capitalize"
-                      >
-                        {r.status}
-                      </Badge>
+                      <ReportStatusBadge status={r.status} />
                     </TableTd>
                     <TableTd>{formatDateTime(r.createdAt)}</TableTd>
+                    <TableTd ta="right">
+                      <LinkButton href={`/admin/reports/${r.id}`} size="xs" variant="light">
+                        Read
+                      </LinkButton>
+                    </TableTd>
                   </TableTr>
                 ))}
               </TableTbody>
             </Table>
           </TableScrollContainer>
         )}
-      </Paper>
-    </>
+      </Panel>
+    </AdminPage>
   );
 }

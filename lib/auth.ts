@@ -45,7 +45,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
 // For pages: redirects to /login when signed out.
 export async function requireUser(next :string) {
   const user = await getCurrentUser();
-  if (!user) redirect(`/login?next=${encodeURIComponent(next)}`);
+  if (!user) redirect(`/?next=${encodeURIComponent(next)}`);
   return user;
 }
 
@@ -54,7 +54,7 @@ export async function requireUser(next :string) {
 // public endpoints and the proxy alone does not protect them.
 export async function requireRole(...roles: Role[]) {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
   if (!user.role || !roles.includes(user.role)) forbidden();
   return user as CurrentUser & { role: Role };
 }

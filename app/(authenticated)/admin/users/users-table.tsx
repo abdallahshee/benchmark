@@ -14,7 +14,7 @@ export type UserRow = {
   firstName: string | null;
   lastName: string | null;
   role: Role | null;
-  phone:string,
+  phone: string;
   lastSignInAt: string | null;
 };
 
@@ -25,68 +25,71 @@ function notify(result: ActionResult) {
   else notifications.show({ color: "red", title: "Something went wrong", message: result.error });
 }
 
+const thProps = { fz: "xs", tt: "uppercase", fw: 600, c: "dimmed" } as const;
+
 export function UsersTable({ users, currentUserId }: { users: UserRow[]; currentUserId: string }) {
   const [pending, startTransition] = useTransition();
 
-  // The signed-in user is not listed, so they can't change or delete themselves here.
- // Admins and the signed-in user are never listed, so neither can be changed or deleted here.
-const visibleUsers = users.filter((u) => u.id !== currentUserId && u.role !== "admin");
+  // Admins and the signed-in user are never listed, so neither can be changed or deleted here.
+  const visibleUsers = users.filter((u) => u.id !== currentUserId && u.role !== "admin");
 
   const onRoleChange = (user: UserRow, value: string | null) => {
     if (!value || value === user.role) return;
     startTransition(async () => notify(await changeRole(user.id, value as Role)));
   };
 
-  const onDelete = (usetoDelete: UserRow) =>
+  const onDelete = (userToDelete: UserRow) =>
     modals.openConfirmModal({
       title: "Delete user?",
       children: (
         <Text size="sm">
-          This permanently deletes <strong>{usetoDelete.email}</strong> and their profile.
+          This permanently deletes <strong>{userToDelete.email}</strong> and their profile.
         </Text>
       ),
       labels: { confirm: "Delete", cancel: "Cancel" },
       confirmProps: { color: "red" },
-      onConfirm: () => startTransition(async () => notify(await deleteUser(usetoDelete.id))),
+      onConfirm: () => startTransition(async () => notify(await deleteUser(userToDelete.id))),
     });
 
   return (
-    <Table.ScrollContainer minWidth={720}>
-      <Table verticalSpacing="sm">
+    <Table.ScrollContainer minWidth={760}>
+      <Table verticalSpacing="sm" horizontalSpacing="lg" highlightOnHover>
         <Table.Thead>
           <Table.Tr>
-            <Table.Th>First name</Table.Th>
-            <Table.Th>Last name</Table.Th>
-            <Table.Th>Email</Table.Th>
-            <Table.Th>Phone</Table.Th>
-            <Table.Th>Status</Table.Th>
-            <Table.Th w={180}>Role</Table.Th>
+            <Table.Th {...thProps}>First name</Table.Th>
+            <Table.Th {...thProps}>Last name</Table.Th>
+            <Table.Th {...thProps}>Email</Table.Th>
+            <Table.Th {...thProps}>Phone</Table.Th>
+            <Table.Th {...thProps}>Status</Table.Th>
+            <Table.Th {...thProps} w={180}>
+              Role
+            </Table.Th>
             <Table.Th w={50} />
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
           {visibleUsers.length === 0 ? (
             <Table.Tr>
-              <Table.Td colSpan={6}>
+              <Table.Td colSpan={7}>
                 <Text c="dimmed" ta="center" py="md">
                   No other users yet.
                 </Text>
               </Table.Td>
             </Table.Tr>
           ) : (
-            visibleUsers.map((theUser) => (
-              <Table.Tr key={theUser.id}>
-                <Table.Td>{theUser.firstName ?? "—"}</Table.Td>
-                <Table.Td>{theUser.lastName ?? "—"}</Table.Td>
-                <Table.Td>{theUser.email ?? "—"}</Table.Td>
-                <Table.Td>{theUser.phone ?? "—"}</Table.Td>
+            visibleUsers.map((user) => (
+              <Table.Tr key={user.id}>
+                <Table.Td fw={600}>{user.firstName || "—"}</Table.Td>
+                <Table.Td fw={600}>{user.lastName || "—"}</Table.Td>
+                <Table.Td>{user.email ?? "—"}</Table.Td>
+                <Table.Td>{user.phone || "—"}</Table.Td>
                 <Table.Td>
-                  {theUser.lastSignInAt ? (
-                    <Badge color="green" variant="light">
+                  {user.lastSignInAt ? (
+                    <Badge color="green" variant="dot">
                       Active
                     </Badge>
                   ) : (
-                    <Badge color="yellow" variant="light">
+                    <Badge color="yellow" variant="dot">
                       Invited
                     </Badge>
                   )}
@@ -94,12 +97,12 @@ const visibleUsers = users.filter((u) => u.id !== currentUserId && u.role !== "a
                 <Table.Td>
                   <Select
                     data={roleOptions}
-                    value={theUser.role}
+                    value={user.role}
                     placeholder="No role"
                     disabled={pending}
                     allowDeselect={false}
-                    onChange={(value) => onRoleChange(theUser, value)}
-                    aria-label={`Role for ${theUser.email}`}
+                    onChange={(value) => onRoleChange(user, value)}
+                    aria-label={`Role for ${user.email}`}
                   />
                 </Table.Td>
                 <Table.Td>
@@ -108,8 +111,8 @@ const visibleUsers = users.filter((u) => u.id !== currentUserId && u.role !== "a
                       variant="subtle"
                       color="red"
                       disabled={pending}
-                      onClick={() => onDelete(theUser)}
-                      aria-label={`Delete ${theUser.email}`}
+                      onClick={() => onDelete(user)}
+                      aria-label={`Delete ${user.email}`}
                     >
                       ✕
                     </ActionIcon>

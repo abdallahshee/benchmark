@@ -1,41 +1,42 @@
-import { Paper, Skeleton, Stack, Title } from "@mantine/core";
-import { asc, eq } from "drizzle-orm";
-import { authUsers } from "drizzle-orm/supabase";
+import { Skeleton } from "@mantine/core";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { AnchorLink } from "@/components/anchor-link";
-import { db } from "@/db";
-import { profiles } from "@/db/schema";
+import { AdminPage, Panel } from "@/components/admin-ui";
 import { requireRole } from "@/lib/auth";
-
-
-import { UsersTable } from "./users-table";
-import { InviteForm } from "./invite-user-form";
 import { getUsers } from "./actions";
+import { InviteForm } from "./invite-user-form";
+import { UsersTable } from "./users-table";
 
 export const metadata: Metadata = { title: "Users" };
 
 export default function AdminUsersPage() {
   return (
-    <Stack component="main" gap="lg" p="xl" className="mx-auto w-full max-w-5xl flex-1">
-      {/* <AnchorLink href="/account" size="sm">
-        ← Account
-      </AnchorLink> */}
-      <Title order={1}>Users</Title>
-      <Suspense fallback={<Skeleton height={300} />}>
+    <AdminPage
+      title="Users"
+      description="Invite people to the system and manage their roles."
+      back={{ href: "/admin", label: "Dashboard" }}
+    >
+      <Suspense fallback={<Skeleton height={400} radius="md" />}>
         <Users />
       </Suspense>
-    </Stack>
+    </AdminPage>
   );
 }
 
 async function Users() {
   const admin = await requireRole("admin");
-  const users=await getUsers()
+  const users = await getUsers();
+
   return (
     <>
-      <UsersTable users={users} currentUserId={admin.id} />
+      <Panel title="Invite a user" description="They get an email to set up their account.">
+        <InviteForm />
+      </Panel>
+
+      <Panel title="Team members" description="Admins and your own account are not listed." flush>
+        <UsersTable users={users} currentUserId={admin.id} />
+      </Panel>
     </>
   );
 }
