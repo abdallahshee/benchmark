@@ -1,3 +1,7 @@
+-- Creates a profile row automatically whenever a user is created in auth.users.
+-- The role comes from app_metadata, which can only be set server-side.
+-- Contact details come from user_metadata: first_name, last_name and phone.
+
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -10,7 +14,7 @@ begin
   new_role := new.raw_app_meta_data ->> 'role';
 
   -- Ignore anything that isn't a known role (keep in sync with ROLES).
-  if new_role is not null and new_role not in ('admin', 'secretary', 'foreman') then
+  if new_role is not null and new_role not in ('admin', 'secretary', 'foreman', 'worker') then
     new_role := null;
   end if;
 
@@ -41,7 +45,7 @@ select
   coalesce(nullif(trim(raw_user_meta_data ->> 'first_name'), ''), ''),
   coalesce(nullif(trim(raw_user_meta_data ->> 'last_name'), ''), ''),
   coalesce(nullif(trim(raw_user_meta_data ->> 'phone'), ''), ''),
-  case when raw_app_meta_data ->> 'role' in ('admin', 'secretary', 'foreman')
+  case when raw_app_meta_data ->> 'role' in ('admin', 'secretary', 'foreman', 'worker')
        then raw_app_meta_data ->> 'role' end
 from auth.users
 on conflict (id) do nothing;

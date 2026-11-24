@@ -10,7 +10,8 @@ import { signIn } from "./actions";
 
 export function LoginForm() {
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/undefined";
+  // const next = searchParams.get("next") ?? "/undefined";
+  const next = searchParams.get("next") ?? undefined;
   const linkFailed = searchParams.get("error") === "confirmation_failed";
   const [pending, startTransition] = useTransition();
 

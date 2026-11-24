@@ -14,7 +14,7 @@ export default function AuthenticatedLayout({
 }
 
 async function AuthGuard({ children }: { children: ReactNode }) {
-    await requireUser("/login");
+    await requireUser("/");
 
     return <>{children}</>;
 }

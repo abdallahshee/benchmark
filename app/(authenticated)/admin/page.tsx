@@ -27,7 +27,8 @@ import {
 import { AnchorLink } from "@/components/anchor-link";
 import { requireRole } from "@/lib/auth";
 import { displayName, formatDateTime } from "@/lib/formats";
-import { getDashboardData } from "./dashboard.query";
+import { getDashboardData } from "./actions";
+
 
 
 export const metadata: Metadata = { title: "Dashboard" };

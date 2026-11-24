@@ -17,7 +17,7 @@ export const reports = pgTable(
     status: text("status", { enum: REPORT_STATUSES }).notNull().default("draft"),
     notes: text("notes"),
     createdBy: uuid("created_by").references(() => profiles.id, { onDelete: "set null" }),
-    submittedAt: timestamp("submitted_at", { withTimezone: true }),
+    // submittedAt: timestamp("submitted_at", { withTimezone: true }),
     ...timestamps,
   },
   (t) => [
@@ -27,7 +27,7 @@ export const reports = pgTable(
     // A submitted report must record when it was submitted.
     check(
       "reports_submitted_at_check",
-      sql`${t.status} <> 'submitted' OR ${t.submittedAt} IS NOT NULL`,
+      sql`${t.status} <> 'submitted' OR ${t.createdAt} IS NOT NULL`,
     ),
   ],
 );

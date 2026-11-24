@@ -1,8 +1,8 @@
 
 import { CurrentYear } from "./current-year";
+import { APP_NAME } from "./nav-icon";
 
 export function AppFooter() {
-    const APP_NAME = "Benchmark";
 
     return (
         <footer className="w-full shrink-0 bg-slate-700 px-6 py-6 text-white">

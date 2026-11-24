@@ -15,6 +15,13 @@
       "when": 1795464907880,
       "tag": "0001_pink_steve_rogers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795500013213,
+      "tag": "0002_faithful_kang",
+      "breakpoints": true
     }
   ]
 }

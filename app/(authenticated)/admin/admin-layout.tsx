@@ -1,53 +1,21 @@
 "use client";
 
 import { EngineerArt } from "@/components/engineer-art";
+import { APP_NAME, ICONS, NavIcon } from "@/components/nav-icon";
 import { AppShell, Avatar, Badge, Burger, Button, Group, Stack, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-// Change this to your product's name.
-const APP_NAME = "Benchmark";
 
 // Small inline icons, so no icon package is needed.
-const ICONS = {
-  dashboard: (
-    <>
-      <rect x="3" y="3" width="7" height="9" rx="1" />
-      <rect x="14" y="3" width="7" height="5" rx="1" />
-      <rect x="14" y="12" width="7" height="9" rx="1" />
-      <rect x="3" y="16" width="7" height="5" rx="1" />
-    </>
-  ),
-  users: (
-    <>
-      <circle cx="9" cy="8" r="3.5" />
-      <path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" />
-      <path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.6c1.8.8 3 2.6 3 5.4" />
-    </>
-  ),
-  sites: (
-    <>
-      <path d="M3 21h18" />
-      <path d="M5 21V8l7-4 7 4v13" />
-      <path d="M10 21v-5h4v5" />
-      <path d="M9 11h.01M12 11h.01M15 11h.01" />
-    </>
-  ),
-  reports: (
-    <>
-      <path d="M6 3h8l4 4v14H6z" />
-      <path d="M14 3v4h4" />
-      <path d="M9 12h6M9 16h6" />
-    </>
-  ),
-};
+
 
 export type NavItem = { label: string; href: string; icon: keyof typeof ICONS };
 
 const navItems: NavItem[] = [
-  // { label: "Dashboard", href: "/admin", icon: "dashboard" },
+  { label: "Dashboard", href: "/admin", icon: "dashboard" },
   { label: "Sites", href: "/admin/sites", icon: "sites" },
   { label: "Reports", href: "/admin/reports", icon: "reports" },
   { label: "Users", href: "/admin/users", icon: "users" },
@@ -59,50 +27,9 @@ type AdminLayoutProps = {
   children: ReactNode;
 };
 
-function NavIcon({ name }: { name: keyof typeof ICONS }) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      width="20"
-      height="20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      {ICONS[name]}
-    </svg>
-  );
-}
 
-// Decorative tower crane and skyline. Hidden from screen readers.
-function CraneArt() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 250 190"
-      className="pointer-events-none absolute inset-x-0 bottom-0 w-full opacity-90"
-    >
-      <g fill="#1e293b">
-        <rect x="0" y="130" width="46" height="60" />
-        <rect x="54" y="105" width="36" height="85" />
-        <rect x="150" y="120" width="44" height="70" />
-        <rect x="202" y="142" width="48" height="48" />
-      </g>
-      <g stroke="#fbbf24" fill="none" strokeLinecap="round" opacity="0.6">
-        <rect x="108" y="30" width="7" height="160" strokeWidth="2.5" />
-        <line x1="40" y1="34" x2="236" y2="34" strokeWidth="4" />
-        <polyline points="40,34 112,10 236,34" strokeWidth="1.5" />
-        <rect x="40" y="34" width="20" height="14" strokeWidth="2.5" />
-        <line x1="200" y1="34" x2="200" y2="96" strokeWidth="1.5" />
-        <circle cx="200" cy="100" r="3.5" strokeWidth="1.5" />
-        <rect x="188" y="104" width="24" height="15" strokeWidth="1.5" />
-      </g>
-    </svg>
-  );
-}
+
+
 
 export function AdminLayout({ user, signOutAction, children }: AdminLayoutProps) {
   const [opened, { toggle, close }] = useDisclosure();
