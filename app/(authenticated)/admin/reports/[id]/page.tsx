@@ -97,7 +97,7 @@ async function ReportDetails({ params }: PageProps) {
             <Text size="sm">{formatDateTime(report.createdAt)}</Text>
           </Field>
           <Field label="Submitted">
-            <Text size="sm">{report.submittedAt ? formatDateTime(report.submittedAt) : "—"}</Text>
+            <Text size="sm">{report.createdAt ? formatDateTime(report.createdAt) : "—"}</Text>
           </Field>
         </SimpleGrid>
         <Divider my="md" />
