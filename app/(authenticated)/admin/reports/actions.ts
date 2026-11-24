@@ -60,7 +60,6 @@ export const getReportById = cache(async (id: string) => {
         reportDate: reports.createdAt,
         notes: reports.notes,
         createdAt: reports.createdAt,
-        submittedAt: reports.submittedAt,
         siteId: sites.id,
         siteName: sites.name,
         creatorFirstName: profiles.firstName,
