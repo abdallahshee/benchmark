@@ -1,9 +1,42 @@
-import React from 'react'
+import type { ReactNode } from "react";
+import { Suspense } from "react";
 
-const layout = () => {
+
+import { requireRole } from "@/lib/auth";
+
+import { signOut } from "@/app/login/actions"; // adjust to wherever your signOut action lives
+import { RoleNavItem } from "@/types/roles";
+import { getSiteSummary } from "../foreman/actions";
+import { RoleLayout } from "../foreman/foreman-layout";
+
+const NAV: RoleNavItem[] = [
+  { label: "Dashboard", href: "/secretary", icon: "dashboard" },
+  { label: "Reports", href: "/secretary/reports", icon: "reports" },
+];
+
+export default function SecretaryLayout({ children }: { children: ReactNode }) {
   return (
-    <div>layout</div>
-  )
+    <Suspense fallback={<div style={{ minHeight: "100vh" }} />}>
+      <SecretaryShell>{children}</SecretaryShell>
+    </Suspense>
+  );
 }
 
-export default layout
+async function SecretaryShell({ children }: { children: ReactNode }) {
+  const user = await requireRole("secretary");
+  const site = user.siteId ? await getSiteSummary(user.siteId) : null;
+
+  return (
+    <RoleLayout
+      consoleLabel="Secretary console"
+      roleBadge="Secretary"
+      homeHref="/secretary"
+      navItems={NAV}
+      user={user}
+      siteName={site?.name ?? null}
+      signOutAction={signOut}
+    >
+      {children}
+    </RoleLayout>
+  );
+}

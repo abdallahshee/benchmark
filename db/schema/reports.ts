@@ -3,8 +3,9 @@ import { check, date, index, pgTable, text, timestamp, unique, uuid } from "driz
 import { timestamps } from "./common";
 import { profiles } from "./profiles";
 import { sites } from "./sites";
+import { REPORT_STATUSES } from "@/types/enums";
 
-export const REPORT_STATUSES = ["draft", "submitted", "reopened"] as const;
+
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
 export const reports = pgTable(
