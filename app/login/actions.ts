@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { authErrorMessage } from "@/lib/supabase/errors";
-import { Role, ROLE_LABELS } from "@/types/user";
+
 
 export type AuthState = { error?: string } | undefined;
 
@@ -23,6 +23,7 @@ import { db } from "@/db";
 import { profiles } from "@/db/schema";
 
 import { safeRedirectPath } from "@/lib/safe-redirect";
+import { ROLE_HOME_PATHS } from "@/types/roles";
 
 
 export async function signIn(input: Credentials): Promise<AuthState> {
@@ -38,7 +39,7 @@ export async function signIn(input: Credentials): Promise<AuthState> {
     .where(eq(profiles.id, data.user.id))
     .limit(1);
 
-  const home = profile?.role ? ROLE_LABELS[profile.role] : undefined;
+  const home = profile?.role ? ROLE_HOME_PATHS[profile.role] : undefined;
 
   // No role (or an unknown one): the account can sign in but can't access anything.
   if (!home) {
