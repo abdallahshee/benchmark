@@ -6,8 +6,8 @@ import { AdminPage, EmptyState, Panel } from "@/components/admin-ui";
 
 import { requireRole } from "@/lib/auth";
 import { getSiteReports, parseReportFilters } from "@/lib/queries/site-reports";
-import { REPORT_VISIBILITY } from "@/lib/report-access";
-import { SiteReportsSection } from "@/components/site-reports-section";
+import { REPORT_VISIBILITY } from "@/lib/report-access"
+import { SiteReportsSection } from "@/components/reports/site-reports-section";
 
 export const metadata: Metadata = { title: "Reports" };
 
