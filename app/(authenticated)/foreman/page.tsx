@@ -1,5 +1,12 @@
 
-import { Divider, Group, SimpleGrid, Skeleton, Stack, Text } from "@mantine/core";
+import {
+    Divider,
+    Group,
+    SimpleGrid,
+    Skeleton,
+    Stack,
+    Text,
+} from "@mantine/core";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
@@ -15,23 +22,11 @@ import { requireRole } from "@/lib/auth";
 import { formatDate, formatDateTime } from "@/lib/formats";
 import { ForemanDashboard, getForemanDashboard } from "./actions";
 
-export const metadata: Metadata = { title: "Dashboard" };
+export const metadata: Metadata = {
+    title: "Dashboard",
+};
 
 const TODAY_HREF = "/foreman/reports/today";
-
-export default function ForemanDashboardPage() {
-    return (
-        <Suspense
-            fallback={
-                <AdminPage title="Dashboard">
-                    <Skeleton height={360} radius="md" />
-                </AdminPage>
-            }
-        >
-            <ForemanDashboardContent />
-        </Suspense>
-    );
-}
 
 // Today's report summary and action.
 function todaySummary(report: ForemanDashboard["today"]) {
@@ -48,23 +43,23 @@ function todaySummary(report: ForemanDashboard["today"]) {
     switch (report.status) {
         case "submitted":
             return {
-                text: "Your draft is saved. Continue editing it when you're ready.",
-                cta: "Continue report",
-                href: TODAY_HREF,
-            };
-
-        case "submitted":
-            return {
-                text: "Your report has been submitted and is awaiting review.",
+                text: "Your report has been submitted and is awaiting engineer review.",
                 cta: "View report",
                 href: view,
             };
 
-        case "reopened":
+        case "approved":
             return {
-                text: "Your report has been reopened. Please review and update it.",
-                cta: "Continue report",
-                href: TODAY_HREF,
+                text: "Your report has been approved by the engineer.",
+                cta: "View report",
+                href: view,
+            };
+
+        case "rejected":
+            return {
+                text: "Your report has been rejected. Please review the engineer's notes.",
+                cta: "View report",
+                href: view,
             };
 
         default:
@@ -74,6 +69,20 @@ function todaySummary(report: ForemanDashboard["today"]) {
                 href: view,
             };
     }
+}
+
+export default function ForemanDashboardPage() {
+    return (
+        <Suspense
+            fallback={
+                <AdminPage title="Dashboard">
+                    <Skeleton height={360} radius="md" />
+                </AdminPage>
+            }
+        >
+            <ForemanDashboardContent />
+        </Suspense>
+    );
 }
 
 async function ForemanDashboardContent() {
@@ -114,7 +123,11 @@ async function ForemanDashboardContent() {
                     ) : undefined
                 }
             >
-                <Group justify="space-between" align="center" gap="md">
+                <Group
+                    justify="space-between"
+                    align="center"
+                    gap="md"
+                >
                     <Text c={today ? undefined : "dimmed"} maw={560}>
                         {summary.text}
                     </Text>
@@ -128,25 +141,25 @@ async function ForemanDashboardContent() {
             {/* Report statistics */}
             <SimpleGrid cols={{ base: 1, sm: 3 }}>
                 <StatCard
-                    label="Drafts"
-                    value={counts.draft}
-                    icon="reports"
-                    color="yellow"
-                />
-
-                <StatCard
                     label="Submitted"
                     value={counts.submitted}
                     icon="inbox"
                     color="blue"
                 />
 
-                {/* <StatCard
-                    label="Reopened"
-                    value={counts.reopened}
+                <StatCard
+                    label="Approved"
+                    value={counts.approved}
+                    icon="check"
+                    color="green"
+                />
+
+                <StatCard
+                    label="Rejected"
+                    value={counts.rejected}
                     icon="reports"
-                    color="orange"
-                /> */}
+                    color="red"
+                />
             </SimpleGrid>
 
             {/* Recent reports */}
@@ -167,7 +180,7 @@ async function ForemanDashboardContent() {
                 {recent.length === 0 ? (
                     <EmptyState
                         title="No reports yet"
-                        text="Your first report will appear here once you start it."
+                        text="Your first report will appear here once you submit it."
                     />
                 ) : (
                     <Stack gap={0}>
@@ -191,15 +204,21 @@ async function ForemanDashboardContent() {
                                             Created {formatDateTime(r.createdAt)}
                                         </Text>
 
-                                        {r.status === "reopened" && r.notes && (
-                                            <Text size="xs" c="orange" mt={4}>
-                                                Notes: {r.notes}
+                                        {r.status === "rejected" && r.notes && (
+                                            <Text
+                                                size="xs"
+                                                c="red"
+                                                mt={4}
+                                            >
+                                                Rejection notes: {r.notes}
                                             </Text>
                                         )}
                                     </div>
 
                                     <Group gap="sm" wrap="nowrap">
-                                        <ReportStatusBadge status={r.status} />
+                                        <ReportStatusBadge
+                                            status={r.status}
+                                        />
 
                                         <LinkButton
                                             href={`/foreman/reports/${r.id}`}
