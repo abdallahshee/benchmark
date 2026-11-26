@@ -5,41 +5,55 @@ import { Suspense } from "react";
 
 import { AdminPage } from "@/components/admin-ui";
 import { ReportDetailsView } from "@/components/reports/report-details-view";
-import { requireRole } from "@/lib/auth";
-// import { REPORT_VISIBILITY } from "@/lib/report-access";
+import { getCurrentUser } from "@/lib/auth";
 import { getReportDetails } from "@/lib/queries/report-details";
 
-export const metadata: Metadata = { title: "Report" };
+export const metadata: Metadata = {
+  title: "Report",
+};
 
-type PageProps = { params: Promise<{ id: string }> };
+type PageProps = {
+  params: Promise<{ id: string }>;
+};
 
-export default function SecretaryReportPage({ params }: PageProps) {
+export default function ForemanReportPage({ params }: PageProps) {
   return (
     <Suspense
       fallback={
-        <AdminPage title="Report" back={{ href: "/secretary/reports", label: "Reports" }}>
+        <AdminPage
+          title="Report"
+          back={{ href: "/secretary/reports", label: "Reports" }}
+        >
           <Skeleton height={420} radius="md" />
         </AdminPage>
       }
     >
-      <SecretaryReport params={params} />
+      <ForemanReport params={params} />
     </Suspense>
   );
 }
 
-async function SecretaryReport({ params }: PageProps) {
-  const user = await requireRole("secretary"); // check access before any query runs
-  if (!user.siteId) notFound(); // a secretary with no site has no reports
+async function ForemanReport({ params }: PageProps) {
+  // Only authenticated users can access reports.
+  const user = await getCurrentUser();
+
+  if (!user) {
+    notFound();
+  }
 
   const { id } = await params;
-  const report = await getReportDetails({
-    id,
-    // allowed: REPORT_VISIBILITY.secretary, // drafts stay private to the foreman
-    siteId: user.siteId,
-  });
-  if (!report) notFound();
+
+  // Any authenticated user can open any report.
+  const report = await getReportDetails({ id });
+
+  if (!report) {
+    notFound();
+  }
 
   return (
-    <ReportDetailsView report={report} back={{ href: "/secretary/reports", label: "Reports" }} />
+    <ReportDetailsView
+      report={report}
+      back={{ href: "/secretary/reports", label: "Reports" }}
+    />
   );
 }

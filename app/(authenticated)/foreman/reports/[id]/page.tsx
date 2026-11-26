@@ -16,7 +16,7 @@ type PageProps = {
   params: Promise<{ id: string }>;
 };
 
-export default function ForemanReportPage({ params }: PageProps) {
+export default function UserReportPage({ params }: PageProps) {
   return (
     <Suspense
       fallback={
@@ -28,12 +28,12 @@ export default function ForemanReportPage({ params }: PageProps) {
         </AdminPage>
       }
     >
-      <ForemanReport params={params} />
+      <AppReport params={params} />
     </Suspense>
   );
 }
 
-async function ForemanReport({ params }: PageProps) {
+async function AppReport({ params }: PageProps) {
   // Only authenticated users can access reports.
   const user = await getCurrentUser();
 
