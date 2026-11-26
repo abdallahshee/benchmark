@@ -1,160 +1,242 @@
+
 import { createClient } from "@supabase/supabase-js";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const secretKey = process.env.SUPABASE_SECRET_KEY;
 
 if (!url || !secretKey) {
-  console.error("Missing env vars: need NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY.");
-  process.exit(1);
+    throw new Error(
+        "Missing env vars: need NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY.",
+    );
 }
 
 if (secretKey.startsWith("sb_publishable_")) {
-  console.error("SUPABASE_SECRET_KEY holds the publishable key. Use the secret key.");
-  process.exit(1);
+    throw new Error(
+        "SUPABASE_SECRET_KEY holds the publishable key. Use the secret key.",
+    );
 }
 
 const supabase = createClient(url, secretKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
+    auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+    },
 });
 
 type SeedRole = "admin" | "foreman" | "secretary" | "worker";
 
 type SeedUser = {
-  role: SeedRole;
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
+    role: SeedRole;
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
 };
 
-// The site the foreman, secretary and worker belong to. It is created if it doesn't exist.
 const SITE_NAME = "Riverside Apartments";
 
-// Roles with only one person per scope: one admin, and one foreman and one secretary
-// per site. A site can have many workers, so workers are checked by email only.
-const ONE_PER_SCOPE: SeedRole[] = ["admin", "foreman", "secretary"];
+const ONE_PER_SCOPE: SeedRole[] = [
+    "admin",
+    "foreman",
+    "secretary",
+];
 
-// Development accounts only. Change all of these passwords after the first sign-in.
+// Development accounts only.
+// Change these passwords before using the application in production.
 const USERS: SeedUser[] = [
-  {
-    role: "admin",
-    email: "abdallahshee664@gmail.com",
-    password: "Shee@1234",
-    firstName: "Abdallah",
-    lastName: "Shee",
-    phone: "0796515302",
-  },
-  {
-    role: "foreman",
-    email: "developershee@gmail.com",
-    password: "Morgan@2026",
-    firstName: "Developer",
-    lastName: "Morgan",
-    phone: "0747515302",
-  },
-  {
-    role: "secretary",
-    email: "amina.wanjiru@example.com",
-    password: "Secretary@2026",
-    firstName: "Amina",
-    lastName: "Wanjiru",
-    phone: "0712345678",
-  },
-  {
-    role: "worker",
-    email: "joseph.otieno@example.com",
-    password: "Worker@2026",
-    firstName: "Joseph",
-    lastName: "Otieno",
-    phone: "0722334455",
-  },
+    {
+        role: "admin",
+        email: "abdallahshee664@gmail.com",
+        password: "Shee@1234",
+        firstName: "Abdallah",
+        lastName: "Shee",
+        phone: "0796515302",
+    },
+    {
+        role: "foreman",
+        email: "developershee@gmail.com",
+        password: "Morgan@2026",
+        firstName: "Developer",
+        lastName: "Morgan",
+        phone: "0747515302",
+    },
+    {
+        role: "secretary",
+        email: "amina.wanjiru@example.com",
+        password: "Secretary@2026",
+        firstName: "Amina",
+        lastName: "Wanjiru",
+        phone: "0712345678",
+    },
+    {
+        role: "worker",
+        email: "joseph.otieno@example.com",
+        password: "Worker@2026",
+        firstName: "Joseph",
+        lastName: "Otieno",
+        phone: "0722334455",
+    },
 ];
 
 async function ensureSite(name: string): Promise<string> {
-  const { data: found, error: lookupError } = await supabase
-    .from("sites")
-    .select("id")
-    .eq("name", name)
-    .maybeSingle();
-  if (lookupError) throw lookupError;
-  if (found) return found.id as string;
+    const { data: found, error: lookupError } = await supabase
+        .from("sites")
+        .select("id")
+        .eq("name", name)
+        .maybeSingle();
 
-  const { data: created, error: createError } = await supabase
-    .from("sites")
-    .insert({ name, status: "active" })
-    .select("id")
-    .single();
-  if (createError) throw createError;
-
-  console.log(`Created site "${name}".`);
-  return created.id as string;
-}
-
-async function seedUser(user: SeedUser, siteId: string) {
-  const label = `${user.role} ${user.firstName} ${user.lastName}`;
-  const onSite = user.role !== "admin";
-
-  if (ONE_PER_SCOPE.includes(user.role)) {
-    const check = supabase.from("profiles").select("id").eq("role", user.role).limit(1);
-    const { data: existing, error: lookupError } = await (onSite
-      ? check.eq("site_id", siteId)
-      : check);
     if (lookupError) throw lookupError;
-    if (existing && existing.length > 0) {
-      console.log(`A ${user.role} already exists${onSite ? " on this site" : ""}, skipping ${label}.`);
-      return;
+
+    if (found) {
+        console.log(`Using existing site "${name}".`);
+        return found.id;
     }
-  }
 
-  const { data, error } = await supabase.auth.admin.createUser({
-    email: user.email,
-    password: user.password,
-    email_confirm: true,
-    // Read by the on_auth_user_created trigger to fill the profile's contact details.
-    user_metadata: { first_name: user.firstName, last_name: user.lastName, phone: user.phone },
-    // Read by the trigger to set profiles.role. Only the server can write app_metadata.
-    app_metadata: { role: user.role },
-  });
+    const { data: created, error: createError } = await supabase
+        .from("sites")
+        .insert({
+            name,
+            status: "active",
+        })
+        .select("id")
+        .single();
 
-  if (error) {
-    if (error.code === "email_exists") {
-      console.log(`${user.email} already exists, skipping ${label}.`);
-      return;
-    }
-    throw error;
-  }
+    if (createError) throw createError;
 
-  if (onSite) {
-    // Put the new user on the site. If this fails, remove the account again so a rerun
-    // starts clean instead of hitting "email already exists".
-    const { data: assigned, error: assignError } = await supabase
-      .from("profiles")
-      .update({ site_id: siteId })
-      .eq("id", data.user.id)
-      .select("id");
+    console.log(`Created site "${name}".`);
 
-    if (assignError || !assigned || assigned.length === 0) {
-      await supabase.auth.admin.deleteUser(data.user.id);
-      throw assignError ?? new Error("The profile row is missing. Is the signup trigger installed?");
-    }
-  }
-
-  console.log(`Created ${label} <${user.email}>${onSite ? ` on "${SITE_NAME}"` : ""}.`);
+    return created.id;
 }
 
-async function main() {
-  const siteId = await ensureSite(SITE_NAME);
+async function findExistingUser(
+    email: string,
+): Promise<string | null> {
+    const { data, error } = await supabase.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+    });
 
-  // One at a time, so the output stays in order and one failure stops the rest.
-  for (const user of USERS) {
-    await seedUser(user, siteId);
-  }
+    if (error) throw error;
 
-  console.log("Seeding finished.");
+    const user = data.users.find(
+        (item) => item.email?.toLowerCase() === email.toLowerCase(),
+    );
+
+    return user?.id ?? null;
 }
 
-main().catch((err) => {
-  console.error("Seeding failed:", err);
-  process.exit(1);
-});
+async function assignProfile(
+    userId: string,
+    user: SeedUser,
+    siteId: string,
+): Promise<void> {
+    const onSite = user.role !== "admin";
+
+    const { data: profile, error: lookupError } = await supabase
+        .from("profiles")
+        .select("id, role, site_id")
+        .eq("id", userId)
+        .maybeSingle();
+
+    if (lookupError) throw lookupError;
+
+    if (!profile) {
+        throw new Error(
+            `Profile not found for ${user.email}. Check the auth user creation trigger.`,
+        );
+    }
+
+    if (ONE_PER_SCOPE.includes(user.role)) {
+        const { data: existing, error } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("role", user.role)
+            .eq("site_id", siteId)
+            .neq("id", userId)
+            .limit(1);
+
+        if (error) throw error;
+
+        if (existing && existing.length > 0) {
+            console.log(
+                `Another ${user.role} already exists on this site. Skipping profile update for ${user.email}.`,
+            );
+            return;
+        }
+    }
+
+    const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+            role: user.role,
+            site_id: onSite ? siteId : null,
+            first_name: user.firstName,
+            last_name: user.lastName,
+            phone: user.phone,
+        })
+        .eq("id", userId);
+
+    if (updateError) throw updateError;
+
+    console.log(
+        `Updated ${user.role} profile: ${user.email}.`,
+    );
+}
+
+async function createSeedUser(
+    user: SeedUser,
+    siteId: string,
+): Promise<void> {
+    const label = `${user.role} ${user.firstName} ${user.lastName}`;
+
+    const existingId = await findExistingUser(user.email);
+
+    if (existingId) {
+        console.log(`${user.email} already exists. Checking profile.`);
+
+        await assignProfile(existingId, user, siteId);
+
+        return;
+    }
+
+    const { data, error } = await supabase.auth.admin.createUser({
+        email: user.email,
+        password: user.password,
+        email_confirm: true,
+
+        user_metadata: {
+            first_name: user.firstName,
+            last_name: user.lastName,
+            phone: user.phone,
+        },
+
+        app_metadata: {
+            role: user.role,
+        },
+    });
+
+    if (error) throw error;
+
+    // The auth trigger should create the profile.
+    // Then assign the site and confirm the profile.
+    await assignProfile(data.user.id, user, siteId);
+
+    console.log(
+        `Created ${label} <${user.email}>${user.role !== "admin" ? ` on "${SITE_NAME}"` : ""}.`,
+    );
+}
+
+export async function runUserSeed(): Promise<string> {
+    console.log("\n--- SEEDING USERS ---\n");
+
+    const siteId = await ensureSite(SITE_NAME);
+
+    for (const user of USERS) {
+        await createSeedUser(user, siteId);
+    }
+
+    console.log("\nUser seeding completed.");
+
+    return siteId;
+}

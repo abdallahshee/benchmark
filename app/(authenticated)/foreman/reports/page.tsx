@@ -7,12 +7,13 @@ import { LinkButton } from "@/components/link-button";
 import type { ReportStatus } from "@/db/schema";
 import { requireRole } from "@/lib/auth";
 import { getSiteReports, parseReportFilters } from "@/lib/queries/site-reports";
-import { SiteReportsSection } from "@/components/site-reports-section";
+import { SiteReportsSection } from "@/components/reports/site-reports-section";
+
 
 export const metadata: Metadata = { title: "Reports" };
 
 // The foreman sees every status of their own reports, drafts included.
-const ALLOWED: readonly ReportStatus[] = ["draft", "approved", "rejected"];
+const ALLOWED: readonly ReportStatus[] = ["submitted", "approved", "rejected"];
 
 type PageProps = {
   searchParams: Promise<{

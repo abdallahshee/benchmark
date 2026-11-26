@@ -1,4 +1,5 @@
 import {
+  Button,
   Group,
   Table,
   TableScrollContainer,
@@ -13,7 +14,9 @@ import { EmptyState, Panel, ReportStatusBadge, Th } from "@/components/admin-ui"
 import { LinkButton } from "@/components/link-button";
 import { displayName, formatDate, formatMoney } from "@/lib/formats";
 import { PAGE_SIZE, type ReportFilters, type SiteReportsResult } from "@/lib/queries/site-reports";
-import { ReportsPagination, ReportsToolbar } from "./reports-toolbar";
+import { ReportsPagination, ReportsToolbar } from "../reports-toolbar";
+import { canDownloadPdf } from "@/lib/report-access";
+
 
 type Props = {
   data: SiteReportsResult;
@@ -87,11 +90,18 @@ export function SiteReportsSection({ data, filters, basePath, detailsBasePath }:
                           </Text>
                         )} */}
                       </TableTd>
-                      <TableTd ta="right">
-                        <LinkButton href={`${detailsBasePath}/${r.id}`} size="xs" variant="light">
-                          View
-                        </LinkButton>
-                      </TableTd>
+<TableTd ta="right">
+  <Group gap="xs" justify="flex-end" wrap="nowrap">
+    {canDownloadPdf(r.status) && (
+      <Button component="a" href={`/api/reports/${r.id}/pdf`} size="xs" variant="default">
+        PDF
+      </Button>
+    )}
+    <LinkButton href={`${detailsBasePath}/${r.id}`} size="xs" variant="light">
+      View
+    </LinkButton>
+  </Group>
+</TableTd>
                     </TableTr>
                   ))}
                 </TableTbody>

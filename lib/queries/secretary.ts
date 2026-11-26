@@ -25,7 +25,7 @@ export async function getSecretaryDashboard(siteId: string) {
       .where(
         and(
           eq(reports.siteId, siteId),
-          ne(reports.status, "draft"),
+          ne(reports.status, "submitted"),
           sql`${reports.createdAt} = (now() at time zone ${TZ})::date`,
         ),
       )
@@ -34,7 +34,7 @@ export async function getSecretaryDashboard(siteId: string) {
     db
       .select({ status: reports.status, total: count() })
       .from(reports)
-      .where(and(eq(reports.siteId, siteId), ne(reports.status, "draft")))
+      .where(and(eq(reports.siteId, siteId), ne(reports.status, "submitted")))
       .groupBy(reports.status),
 
     // The review queue: the report that has waited longest comes first.
@@ -52,7 +52,7 @@ export async function getSecretaryDashboard(siteId: string) {
       })
       .from(reports)
       .leftJoin(profiles, eq(profiles.id, reports.createdBy))
-      .where(and(eq(reports.siteId, siteId), eq(reports.status, "draft")))
+      .where(and(eq(reports.siteId, siteId), eq(reports.status, "submitted")))
       .orderBy(asc(reports.createdAt))
       .limit(PENDING_SHOWN),
   ]);

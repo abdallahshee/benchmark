@@ -1,5 +1,5 @@
 {
-  "id": "fd4259c6-f685-4364-aaac-cc8f25daa188",
+  "id": "6ebcca9a-d96c-4ec3-b97e-28b1293f2541",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -26,7 +26,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'draft'"
+          "default": "'submitted'"
         },
         "notes": {
           "name": "notes",
@@ -37,12 +37,6 @@
         "created_by": {
           "name": "created_by",
           "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "submitted_at": {
-          "name": "submitted_at",
-          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },
@@ -62,6 +56,27 @@
         }
       },
       "indexes": {
+        "reports_site_date_unique": {
+          "name": "reports_site_date_unique",
+          "columns": [
+            {
+              "expression": "site_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "((\"created_at\" AT TIME ZONE 'Africa/Nairobi')::date)",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "reports_created_by_idx": {
           "name": "reports_created_by_idx",
           "columns": [
@@ -107,20 +122,12 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "reports_site_date_unique": {
-          "name": "reports_site_date_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "site_id"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
         "reports_submitted_at_check": {
           "name": "reports_submitted_at_check",
-          "value": "\"reports\".\"status\" <> 'submitted' OR \"reports\".\"submitted_at\" IS NOT NULL"
+          "value": "\"reports\".\"status\" <> 'submitted' OR \"reports\".\"created_at\" IS NOT NULL"
         }
       },
       "isRLSEnabled": false
@@ -207,6 +214,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "role": {
           "name": "role",

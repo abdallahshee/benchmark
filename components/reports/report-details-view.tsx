@@ -1,5 +1,6 @@
 import {
   Alert,
+  Button,
   Divider,
   Group,
   SimpleGrid,
@@ -24,6 +25,7 @@ import {
 import { AnchorLink } from "@/components/anchor-link";
 import type { ReportDetails } from "@/lib/queries/report-details";
 import { displayName, formatDate, formatDateTime, formatMoney } from "@/lib/formats";
+import { canDownloadPdf } from "@/lib/report-access";
 
 type Props = {
   report: ReportDetails;
@@ -45,6 +47,11 @@ export function ReportDetailsView({ report, back, siteHref, actions }: Props) {
       actions={
         <Group gap="sm">
           <ReportStatusBadge status={report.status} />
+          {canDownloadPdf(report.status) && (
+            <Button component="a" href={`/api/reports/${report.id}/pdf`} variant="light" size="xs">
+              Download PDF
+            </Button>
+          )}
           {actions}
         </Group>
       }

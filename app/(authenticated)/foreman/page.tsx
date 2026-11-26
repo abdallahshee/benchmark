@@ -46,7 +46,7 @@ function todaySummary(report: ForemanDashboard["today"]) {
     const view = `/foreman/reports/${report.id}`;
 
     switch (report.status) {
-        case "draft":
+        case "submitted":
             return {
                 text: "Your draft is saved. Continue editing it when you're ready.",
                 cta: "Continue report",

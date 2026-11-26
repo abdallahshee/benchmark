@@ -1,14 +1,12 @@
 CREATE TABLE "reports" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"site_id" uuid NOT NULL,
-	"status" text DEFAULT 'draft' NOT NULL,
+	"status" text DEFAULT 'submitted' NOT NULL,
 	"notes" text,
 	"created_by" uuid,
-	"submitted_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "reports_site_date_unique" UNIQUE("site_id"),
-	CONSTRAINT "reports_submitted_at_check" CHECK ("reports"."status" <> 'submitted' OR "reports"."submitted_at" IS NOT NULL)
+	CONSTRAINT "reports_submitted_at_check" CHECK ("reports"."status" <> 'submitted' OR "reports"."created_at" IS NOT NULL)
 );
 --> statement-breakpoint
 CREATE TABLE "sites" (
@@ -25,6 +23,7 @@ CREATE TABLE "profiles" (
 	"first_name" text NOT NULL,
 	"last_name" text NOT NULL,
 	"phone" text NOT NULL,
+	"status" text,
 	"role" text,
 	"site_id" uuid,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -63,6 +62,7 @@ ALTER TABLE "profiles" ADD CONSTRAINT "profiles_id_users_id_fk" FOREIGN KEY ("id
 ALTER TABLE "profiles" ADD CONSTRAINT "profiles_site_id_sites_id_fk" FOREIGN KEY ("site_id") REFERENCES "public"."sites"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "materials" ADD CONSTRAINT "materials_report_id_reports_id_fk" FOREIGN KEY ("report_id") REFERENCES "public"."reports"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "machineries" ADD CONSTRAINT "machineries_report_id_reports_id_fk" FOREIGN KEY ("report_id") REFERENCES "public"."reports"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "reports_site_date_unique" ON "reports" USING btree ("site_id",(("created_at" AT TIME ZONE 'Africa/Nairobi')::date));--> statement-breakpoint
 CREATE INDEX "reports_created_by_idx" ON "reports" USING btree ("created_by");--> statement-breakpoint
 CREATE INDEX "profiles_site_id_idx" ON "profiles" USING btree ("site_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "profiles_one_foreman_per_site" ON "profiles" USING btree ("site_id") WHERE "profiles"."role" = 'foreman';--> statement-breakpoint

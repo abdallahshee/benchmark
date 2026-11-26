@@ -45,7 +45,7 @@ function todaySummary(report: SecretaryDashboard["today"]) {
   }
   const href = `/secretary/reports/${report.id}`;
   switch (report.status) {
-    case "draft":
+    case "submitted":
       return { text: "Today's report is waiting for your review.", cta: "Review report", href };
     case "approved":
       return { text: "You approved today's report.", cta: "View report", href };

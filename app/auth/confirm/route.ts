@@ -26,5 +26,5 @@ export async function GET(request: NextRequest) {
     if (!error) redirect(next);
   }
 
-  redirect("/login?error=confirmation_failed");
+  redirect("/?error=confirmation_failed");
 }

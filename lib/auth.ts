@@ -60,3 +60,5 @@ export async function requireRole(...roles: Role[]) {
   if (!user.role || !roles.includes(user.role)) forbidden();
   return user as CurrentUser & { role: Role };
 }
+
+
