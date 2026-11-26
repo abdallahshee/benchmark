@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { AdminPage } from "@/components/admin-ui";
-import type { ReportStatus } from "@/db/schema";
+// import type { ReportStatus } from "@/db/schema";
 import { requireRole } from "@/lib/auth";
 import { getSiteReports, parseReportFilters } from "@/lib/queries/site-reports";
 import { getSiteById } from "../action";
@@ -13,7 +13,7 @@ import { SiteReportsSection } from "@/components/reports/site-reports-section";
 export const metadata: Metadata = { title: "Site reports" };
 
 // The admin sees only reports the secretary has approved or rejected.
-const ALLOWED: readonly ReportStatus[] = ["approved", "rejected"];
+// const ALLOWED: readonly ReportStatus[] = ["approved", "rejected"];
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -46,8 +46,8 @@ async function SiteReports({ params, searchParams }: PageProps) {
   const site = await getSiteById(id);
   if (!site) notFound();
 
-  const filters = parseReportFilters(await searchParams, ALLOWED);
-  const data = await getSiteReports({ siteId: site.id, allowed: ALLOWED, ...filters });
+  const filters = parseReportFilters(await searchParams);
+  const data = await getSiteReports({ siteId: site.id, ...filters });
 
   return (
     <AdminPage
