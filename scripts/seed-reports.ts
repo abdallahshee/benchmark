@@ -110,7 +110,7 @@ export async function seedReports(): Promise<void> {
                 .values({
                     siteId: foreman.siteId,
                     createdBy: foreman.id,
-                    status: "submitted",
+                    // status: "submitted",
                     notes: reportData.notes,
                     createdAt: reportDate,
                 })

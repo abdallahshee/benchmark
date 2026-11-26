@@ -274,10 +274,10 @@ export function SiteStatusBadge({ status }: { status: string }) {
   );
 }
 
-export function ReportStatusBadge({ status }: { status: string }) {
-  return (
-    <Badge variant="dot" size="md" color={REPORT_COLOR[status] ?? "gray"} tt="capitalize">
-      {status}
-    </Badge>
-  );
-}
+// export function ReportStatusBadge() {
+//   return (
+//     <Badge variant="dot" size="md" color={REPORT_COLOR[status] ?? "gray"} tt="capitalize">
+//       {status}
+//     </Badge>
+//   );
+// }

@@ -1,17 +1,14 @@
 "use client";
 
-import { Box, Button, Group, Loader, Pagination, SegmentedControl, Badge } from "@mantine/core";
+import { Button, Group, Loader, Pagination } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-export type StatusOption = { value: string; label: string; count: number };
-
-type Filters = { status: string | null; from: string | null; to: string | null; page: number };
+type Filters = { from: string | null; to: string | null; page: number };
 
 function buildUrl(basePath: string, f: Filters) {
   const p = new URLSearchParams();
-  if (f.status && f.status !== "all") p.set("status", f.status);
   if (f.from) p.set("from", f.from);
   if (f.to) p.set("to", f.to);
   if (f.page > 1) p.set("page", String(f.page));
@@ -21,22 +18,18 @@ function buildUrl(basePath: string, f: Filters) {
 
 type ToolbarProps = {
   basePath: string;
-  options: StatusOption[];
-  status: string | null;
   from: string | null;
   to: string | null;
 };
 
-export function ReportsToolbar({ basePath, options, status, from, to }: ToolbarProps) {
+export function ReportsToolbar({ basePath, from, to }: ToolbarProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [range, setRange] = useState<[string | null, string | null]>([from, to]);
 
-  // Changing a filter always goes back to the first page.
+  // Changing the range always goes back to the first page.
   const go = (next: Partial<Filters>) =>
-    startTransition(() =>
-      router.replace(buildUrl(basePath, { status, from, to, page: 1, ...next })),
-    );
+    startTransition(() => router.replace(buildUrl(basePath, { from, to, page: 1, ...next })));
 
   const onRange = (next: [string | null, string | null]) => {
     setRange(next);
@@ -46,67 +39,46 @@ export function ReportsToolbar({ basePath, options, status, from, to }: ToolbarP
     go({ from: start, to: end });
   };
 
-  const active = Boolean(status || from || to);
+  const active = Boolean(from || to);
 
   return (
-    <Group justify="space-between" align="flex-end" gap="md">
-      <Box maw="100%" style={{ overflowX: "auto" }}>
-        <SegmentedControl
-          value={status ?? "all"}
-          onChange={(value) => go({ status: value === "all" ? null : value })}
-          data={options.map((o) => ({
-            value: o.value,
-            label: (
-              <Group gap={6} wrap="nowrap" justify="center">
-                <span>{o.label}</span>
-                <Badge size="xs" variant="light" circle={o.count < 10}>
-                  {o.count}
-                </Badge>
-              </Group>
-            ),
-          }))}
-        />
-      </Box>
-
-      <Group gap="sm" align="flex-end">
-        <DatePickerInput
-          type="range"
-          label="Report date"
-          placeholder="Pick a date range"
-          valueFormat="DD MMM YYYY"
-          value={range}
-          onChange={onRange}
-          clearable
-          w={260}
-        />
-        {active && (
-          <Button
-            variant="subtle"
-            size="sm"
-            onClick={() => {
-              setRange([null, null]);
-              startTransition(() => router.replace(basePath));
-            }}
-          >
-            Clear filters
-          </Button>
-        )}
-        {pending && <Loader size="sm" mb={8} />}
-      </Group>
+    <Group gap="sm" align="flex-end">
+      <DatePickerInput
+        type="range"
+        label="Report date"
+        placeholder="Pick a date range"
+        valueFormat="DD MMM YYYY"
+        value={range}
+        onChange={onRange}
+        clearable
+        w={260}
+      />
+      {active && (
+        <Button
+          variant="subtle"
+          size="sm"
+          onClick={() => {
+            setRange([null, null]);
+            startTransition(() => router.replace(basePath));
+          }}
+        >
+          Clear filter
+        </Button>
+      )}
+      {pending && <Loader size="sm" mb={8} />}
     </Group>
   );
 }
 
 type PaginationProps = {
   basePath: string;
-  status: string | null;
   from: string | null;
   to: string | null;
   page: number;
   pageCount: number;
 };
 
-export function ReportsPagination({ basePath, status, from, to, page, pageCount }: PaginationProps) {
+export function ReportsPagination({ basePath, from, to, page, pageCount }: PaginationProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -119,7 +91,7 @@ export function ReportsPagination({ basePath, status, from, to, page, pageCount 
       size="sm"
       disabled={pending}
       onChange={(next) =>
-        startTransition(() => router.push(buildUrl(basePath, { status, from, to, page: next })))
+        startTransition(() => router.push(buildUrl(basePath, { from, to, page: next })))
       }
     />
   );

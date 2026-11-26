@@ -18,14 +18,14 @@ import {
   AdminPage,
   Field,
   Panel,
-  ReportStatusBadge,
+  // ReportStatusBadge,
   StatCard,
   Th,
 } from "@/components/admin-ui";
 import { AnchorLink } from "@/components/anchor-link";
 import type { ReportDetails } from "@/lib/queries/report-details";
 import { displayName, formatDate, formatDateTime, formatMoney } from "@/lib/formats";
-import { canDownloadPdf } from "@/lib/report-access";
+// import { canDownloadPdf } from "@/lib/report-access";
 
 type Props = {
   report: ReportDetails;
@@ -46,21 +46,19 @@ export function ReportDetailsView({ report, back, siteHref, actions }: Props) {
       back={back}
       actions={
         <Group gap="sm">
-          <ReportStatusBadge status={report.status} />
-          {canDownloadPdf(report.status) && (
-            <Button component="a" href={`/api/reports/${report.id}/pdf`} variant="light" size="xs">
-              Download PDF
-            </Button>
-          )}
+
+          <Button
+            component="a"
+            href={`/api/reports/${report.id}/pdf`}
+            color="blue"
+          >
+            Download PDF
+          </Button>
+
           {actions}
         </Group>
       }
     >
-      {/* {report.status === "rejected" && (
-        <Alert color="red" variant="light" title="This report was rejected">
-          {report.rejectionReason || "No reason was given."}
-        </Alert>
-      )} */}
 
       <SimpleGrid cols={{ base: 1, sm: 3 }}>
         <StatCard label="Machines in operation" value={machineCount} icon="gear" color="orange" />

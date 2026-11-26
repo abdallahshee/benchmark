@@ -20,7 +20,7 @@ import {
   AdminPage,
   EmptyState,
   Panel,
-  ReportStatusBadge,
+  // ReportStatusBadge,
   StatCard,
   Th,
 } from "@/components/admin-ui";
@@ -230,7 +230,7 @@ async function Dashboard() {
                   <Th>Site</Th>
                   <Th>Created by</Th>
                   <Th>Created</Th>
-                  <Th>Status</Th>
+                  {/* <Th>Status</Th> */}
                 </TableTr>
               </TableThead>
               <TableTbody>
@@ -245,9 +245,9 @@ async function Dashboard() {
                       {displayName({ firstName: r.creatorFirstName, lastName: r.creatorLastName })}
                     </TableTd>
                     <TableTd>{formatDateTime(r.createdAt)}</TableTd>
-                    <TableTd>
+                    {/* <TableTd>
                       <ReportStatusBadge status={r.status} />
-                    </TableTd>
+                    </TableTd> */}
                   </TableTr>
                 ))}
               </TableTbody>

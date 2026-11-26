@@ -1,5 +1,5 @@
-
 import {
+    Badge,
     Divider,
     Group,
     SimpleGrid,
@@ -14,12 +14,11 @@ import {
     AdminPage,
     EmptyState,
     Panel,
-    ReportStatusBadge,
     StatCard,
 } from "@/components/admin-ui";
 import { LinkButton } from "@/components/link-button";
 import { requireRole } from "@/lib/auth";
-import { formatDate, formatDateTime } from "@/lib/formats";
+import { formatDateTime, formatDay } from "@/lib/formats";
 import { ForemanDashboard, getForemanDashboard } from "./actions";
 
 export const metadata: Metadata = {
@@ -29,46 +28,20 @@ export const metadata: Metadata = {
 const TODAY_HREF = "/foreman/reports/new";
 
 // Today's report summary and action.
-function todaySummary(report: ForemanDashboard["today"]) {
-    if (!report) {
+function todaySummary(today: ForemanDashboard["today"]) {
+    if (!today) {
         return {
-            text: "You haven't started today's report yet.",
+            text: "You haven't submitted today's report yet.",
             cta: "Create today's report",
             href: TODAY_HREF,
         };
     }
 
-    const view = `/foreman/reports/${report.id}`;
-
-    switch (report.status) {
-        case "submitted":
-            return {
-                text: "Your report has been submitted and is awaiting engineer review.",
-                cta: "View report",
-                href: view,
-            };
-
-        case "approved":
-            return {
-                text: "Your report has been approved by the engineer.",
-                cta: "View report",
-                href: view,
-            };
-
-        case "rejected":
-            return {
-                text: "Your report has been rejected. Please review the engineer's notes.",
-                cta: "View report",
-                href: view,
-            };
-
-        default:
-            return {
-                text: "View today's report.",
-                cta: "View report",
-                href: view,
-            };
-    }
+    return {
+        text: `You submitted today's report on ${formatDateTime(today.createdAt)}.`,
+        cta: "View report",
+        href: `/foreman/reports/${today.id}`,
+    };
 }
 
 export default function ForemanDashboardPage() {
@@ -105,8 +78,9 @@ async function ForemanDashboardContent() {
         );
     }
 
-    const { site, today, counts, recent } = data;
+    const { site, today, total, thisMonth, recent } = data;
     const summary = todaySummary(today);
+    const latest = recent[0];
 
     return (
         <AdminPage
@@ -119,46 +93,42 @@ async function ForemanDashboardContent() {
                 description="One report per site, every day"
                 action={
                     today ? (
-                        <ReportStatusBadge status={today.status} />
+                        <Badge variant="dot" color="green">
+                            Submitted
+                        </Badge>
                     ) : undefined
                 }
             >
-                <Group
-                    justify="space-between"
-                    align="center"
-                    gap="md"
-                >
+                <Group justify="space-between" align="center" gap="md">
                     <Text c={today ? undefined : "dimmed"} maw={560}>
                         {summary.text}
                     </Text>
 
-                    <LinkButton href={summary.href}>
-                        {summary.cta}
-                    </LinkButton>
+                    <LinkButton href={summary.href}>{summary.cta}</LinkButton>
                 </Group>
             </Panel>
 
             {/* Report statistics */}
             <SimpleGrid cols={{ base: 1, sm: 3 }}>
                 <StatCard
-                    label="Submitted"
-                    value={counts.submitted}
-                    icon="inbox"
+                    label="Reports submitted"
+                    value={total}
+                    icon="reports"
                     color="blue"
                 />
 
                 <StatCard
-                    label="Approved"
-                    value={counts.approved}
-                    icon="check"
-                    color="green"
+                    label="This month"
+                    value={thisMonth}
+                    icon="inbox"
+                    color="yellow"
                 />
 
                 <StatCard
-                    label="Rejected"
-                    value={counts.rejected}
-                    icon="reports"
-                    color="red"
+                    label="Last report"
+                    value={latest ? formatDay(latest.createdAt) : "None yet"}
+                    icon="check"
+                    color="green"
                 />
             </SimpleGrid>
 
@@ -167,11 +137,7 @@ async function ForemanDashboardContent() {
                 title="Recent reports"
                 description="Your site's five latest"
                 action={
-                    <LinkButton
-                        href="/foreman/reports"
-                        size="xs"
-                        variant="light"
-                    >
+                    <LinkButton href="/foreman/reports" size="xs" variant="light">
                         All reports
                     </LinkButton>
                 }
@@ -197,37 +163,27 @@ async function ForemanDashboardContent() {
                                 >
                                     <div>
                                         <Text fw={600} size="sm">
-                                            {formatDate(r.reportDate)}
+                                            {formatDay(r.createdAt)}
                                         </Text>
 
                                         <Text size="xs" c="dimmed">
-                                            Created {formatDateTime(r.createdAt)}
+                                            Submitted {formatDateTime(r.createdAt)}
                                         </Text>
 
-                                        {r.status === "rejected" && r.notes && (
-                                            <Text
-                                                size="xs"
-                                                c="red"
-                                                mt={4}
-                                            >
-                                                Rejection notes: {r.notes}
+                                        {r.notes && (
+                                            <Text size="xs" c="dimmed" mt={4} lineClamp={1} maw={420}>
+                                                {r.notes}
                                             </Text>
                                         )}
                                     </div>
 
-                                    <Group gap="sm" wrap="nowrap">
-                                        <ReportStatusBadge
-                                            status={r.status}
-                                        />
-
-                                        <LinkButton
-                                            href={`/foreman/reports/${r.id}`}
-                                            size="xs"
-                                            variant="light"
-                                        >
-                                            View
-                                        </LinkButton>
-                                    </Group>
+                                    <LinkButton
+                                        href={`/foreman/reports/${r.id}`}
+                                        size="xs"
+                                        variant="light"
+                                    >
+                                        View
+                                    </LinkButton>
                                 </Group>
                             </div>
                         ))}

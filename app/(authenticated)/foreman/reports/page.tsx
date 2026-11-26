@@ -4,7 +4,7 @@ import { Suspense } from "react";
 
 import { AdminPage, EmptyState, Panel } from "@/components/admin-ui";
 import { LinkButton } from "@/components/link-button";
-import type { ReportStatus } from "@/db/schema";
+// import type { ReportStatus } from "@/db/schema";
 import { requireRole } from "@/lib/auth";
 import { getSiteReports, parseReportFilters } from "@/lib/queries/site-reports";
 import { SiteReportsSection } from "@/components/reports/site-reports-section";
@@ -13,7 +13,7 @@ import { SiteReportsSection } from "@/components/reports/site-reports-section";
 export const metadata: Metadata = { title: "Reports" };
 
 // The foreman sees every status of their own reports, drafts included.
-const ALLOWED: readonly ReportStatus[] = ["submitted", "approved", "rejected"];
+// const ALLOWED: readonly ReportStatus[] = ["submitted", "approved", "rejected"];
 
 type PageProps = {
   searchParams: Promise<{
@@ -54,8 +54,8 @@ async function ForemanReports({ searchParams }: PageProps) {
     );
   }
 
-  const filters = parseReportFilters(await searchParams, ALLOWED);
-  const data = await getSiteReports({ siteId: user.siteId, allowed: ALLOWED, ...filters });
+  const filters = parseReportFilters(await searchParams);
+  const data = await getSiteReports({ siteId: user.siteId, ...filters });
 
   return (
     <SiteReportsSection

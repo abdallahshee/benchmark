@@ -1,36 +1,30 @@
 import "server-only";
 
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import {  asc, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import type { ReportStatus } from "@/db/schema";
-import { machineries, materials, profiles, reports, sites } from "@/db/schema";
-import { isUuid } from "../helper";
+import {
+  machineries,
+  materials,
+  profiles,
+  reports,
+  sites,
+} from "@/db/schema";
 
+import { isUuid } from "../helper";
 
 type Options = {
   id: string;
-  // The statuses the caller's role may see. A report in any other status is "not found".
-  allowed: readonly ReportStatus[];
-  // For the foreman and secretary: their own site, taken from their profile. The report
-  // must belong to it. Leave it out only for the admin, who sees every site.
-  siteId?: string;
 };
 
-// One report with its site, creator, machinery, materials and the materials total. Returns
-// null when the id is malformed, the report doesn't exist, its status isn't visible to this
-// role, or it belongs to another site. This function does NOT check who is calling:
-// callers must call requireRole() first.
-export async function getReportDetails({ id, allowed, siteId }: Options) {
-  if (!isUuid(id) || allowed.length === 0) return null; // a malformed id would make Postgres throw
-  if (siteId !== undefined && !isUuid(siteId)) return null;
+// Retrieves a report by ID without checking its status or the caller's role.
+export async function getReportDetails({ id }: Options) {
+  if (!isUuid(id)) return null;
 
   const [report] = await db
     .select({
       id: reports.id,
-      status: reports.status,
       notes: reports.notes,
-    //   rejectionReason: reports.rejectionReason,
       createdAt: reports.createdAt,
       siteId: sites.id,
       siteName: sites.name,
@@ -40,18 +34,11 @@ export async function getReportDetails({ id, allowed, siteId }: Options) {
     .from(reports)
     .innerJoin(sites, eq(sites.id, reports.siteId))
     .leftJoin(profiles, eq(profiles.id, reports.createdBy))
-    .where(
-      and(
-        eq(reports.id, id),
-        inArray(reports.status, [...allowed]),
-        siteId ? eq(reports.siteId, siteId) : undefined,
-      ),
-    )
+    .where(eq(reports.id, id))
     .limit(1);
 
   if (!report) return null;
 
-  // Only fetched once access is confirmed.
   const [machineryRows, materialRows, [totals]] = await Promise.all([
     db
       .select({
@@ -71,7 +58,6 @@ export async function getReportDetails({ id, allowed, siteId }: Options) {
         quantity: materials.quantity,
         unit: materials.unit,
         unitCost: materials.unitCost,
-        // Plain SQL so Postgres does the exact decimal math.
         lineCost: sql<string>`(quantity * unit_cost)`,
       })
       .from(materials)
@@ -79,7 +65,9 @@ export async function getReportDetails({ id, allowed, siteId }: Options) {
       .orderBy(asc(materials.name)),
 
     db
-      .select({ total: sql<string>`coalesce(sum(quantity * unit_cost), 0)` })
+      .select({
+        total: sql<string>`coalesce(sum(quantity * unit_cost), 0)`,
+      })
       .from(materials)
       .where(eq(materials.reportId, id)),
   ]);
@@ -92,4 +80,6 @@ export async function getReportDetails({ id, allowed, siteId }: Options) {
   };
 }
 
-export type ReportDetails = NonNullable<Awaited<ReturnType<typeof getReportDetails>>>;
+export type ReportDetails = NonNullable<
+  Awaited<ReturnType<typeof getReportDetails>>
+>;

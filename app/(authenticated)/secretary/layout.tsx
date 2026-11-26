@@ -33,7 +33,6 @@ async function SecretaryShell({ children }: { children: ReactNode }) {
 
   return (
     <RoleLayout
-      consoleLabel="Secretary console"
       roleBadge="Secretary"
       homeHref="/secretary"
       navItems={NAV}

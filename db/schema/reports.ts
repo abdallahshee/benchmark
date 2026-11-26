@@ -11,9 +11,9 @@ import {
 import { timestamps } from "./common";
 import { profiles } from "./profiles";
 import { sites } from "./sites";
-import { REPORT_STATUSES } from "@/types/enums";
+// import { REPORT_STATUSES } from "@/types/enums";
 
-export type ReportStatus = (typeof REPORT_STATUSES)[number];
+// export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
 export const reports = pgTable(
   "reports",
@@ -23,10 +23,6 @@ export const reports = pgTable(
     siteId: uuid("site_id")
       .notNull()
       .references(() => sites.id, { onDelete: "restrict" }),
-
-    status: text("status", { enum: REPORT_STATUSES })
-      .notNull()
-      .default("submitted"),
 
     notes: text("notes"),
 
@@ -43,9 +39,5 @@ export const reports = pgTable(
 
     index("reports_created_by_idx").on(t.createdBy),
 
-    check(
-      "reports_submitted_at_check",
-      sql`${t.status} <> 'submitted' OR ${t.createdAt} IS NOT NULL`,
-    ),
   ],
 );

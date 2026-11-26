@@ -1,23 +1,22 @@
 import "server-only";
 
-import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, count, desc, eq, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db";
 import { machineries, materials, profiles, reports } from "@/db/schema";
-import type { ReportStatus } from "@/db/schema";
 import { isUuid } from "../helper";
-
 
 export const PAGE_SIZE = 10;
 
-const LABEL: Record<string, string> = {
-  draft: "Draft",
-  approved: "Approved",
-  rejected: "Rejected",
-};
+// "Today" and the day a report belongs to depend on the time zone. Change this if your
+// sites are elsewhere.
+const TZ = sql.raw("'Africa/Nairobi'");
+
+// A report has no date column of its own: its day is the day it was created, in the
+// site's time zone.
+const createdDay = sql`((${reports.createdAt} at time zone ${TZ})::date)`;
 
 export type ReportFilters = {
-  status: ReportStatus | null;
   from: string | null;
   to: string | null;
   page: number;
@@ -33,21 +32,14 @@ function parseDay(value: string | undefined): string | null {
   return valid ? value : null; // rejects impossible dates such as 2026-02-31
 }
 
-// The query string is user input, so every value is checked: the status must be one this
-// role may see, the dates must be real, and the page must be a positive number.
-export function parseReportFilters(
-  params: {
-    status?: string | string[];
-    from?: string | string[];
-    to?: string | string[];
-    page?: string | string[];
-  },
-  allowed: readonly ReportStatus[],
-): ReportFilters {
+// The query string is user input, so every value is checked: the dates must be real and
+// the page must be a positive number.
+export function parseReportFilters(params: {
+  from?: string | string[];
+  to?: string | string[];
+  page?: string | string[];
+}): ReportFilters {
   const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
-
-  const requested = first(params.status);
-  const status = allowed.find((s) => s === requested) ?? null;
 
   let from = parseDay(first(params.from));
   let to = parseDay(first(params.to));
@@ -56,61 +48,44 @@ export function parseReportFilters(
   const n = Number.parseInt(first(params.page) ?? "1", 10);
   const page = Number.isFinite(n) && n > 0 ? Math.min(n, 10_000) : 1;
 
-  return { status, from, to, page };
+  return { from, to, page };
 }
 
-type Options = Partial<ReportFilters> & {
-  siteId: string;
-  // The statuses this role may see. Anything else is never returned, whatever the URL says.
-  allowed: readonly ReportStatus[];
+export type SiteReportRow = {
+  id: string;
+  createdAt: Date;
+  creatorFirstName: string | null;
+  creatorLastName: string | null;
+  materialsCost: string;
+  machineCount: number;
 };
 
-// One site's reports, newest first, with counts for the filter tabs. This function does NOT
-// check access: callers must call requireRole() first and pass the site from the user's own
-// profile (or, for the admin, a site that exists), never an id taken from the browser.
-export async function getSiteReports({
-  siteId,
-  allowed,
-  status = null,
-  from = null,
-  to = null,
-  page = 1,
-}: Options) {
-  const empty = {
-    rows: [],
-    total: 0,
-    totalAll: 0,
-    page: 1,
-    pageCount: 1,
-    options: [] as { value: string; label: string; count: number }[],
-  };
-  if (!isUuid(siteId) || allowed.length === 0) return empty;
+type Options = { siteId: string } & Partial<ReportFilters>;
 
-  // Everything except the status tab, so the tab counts respond to the date range.
-  const base = [eq(reports.siteId, siteId), inArray(reports.status, [...allowed])];
-  if (from) base.push(sql`${reports.createdAt} >= ${from}::date`);
-  if (to) base.push(sql`${reports.createdAt} <= ${to}::date`);
+// One site's reports, newest first, optionally limited to a date range, one page at a time.
+// This function does NOT check access: callers must call requireRole() first and pass the
+// site from the user's own profile (or, for the admin, a site that exists), never an id
+// taken from the browser.
+export async function getSiteReports({ siteId, from = null, to = null, page = 1 }: Options) {
+  if (!isUuid(siteId)) {
+    return { rows: [] as SiteReportRow[], total: 0, page: 1, pageCount: 1 };
+  }
 
-  const countRows = await db
-    .select({ status: reports.status, total: count() })
-    .from(reports)
-    .where(and(...base))
-    .groupBy(reports.status);
+  const conditions: SQL[] = [eq(reports.siteId, siteId)];
+  // Both ends are inclusive, and compared by day, so a report made late on the last day
+  // is still included.
+  if (from) conditions.push(sql`${createdDay} >= ${from}::date`);
+  if (to) conditions.push(sql`${createdDay} <= ${to}::date`);
+  const where = and(...conditions);
 
-  const counts: Record<string, number> = {};
-  for (const s of allowed) counts[s] = 0;
-  for (const row of countRows) counts[row.status] = row.total;
+  const [{ total }] = await db.select({ total: count() }).from(reports).where(where);
 
-  const totalAll = Object.values(counts).reduce((a, b) => a + b, 0);
-  const selected = status && allowed.includes(status) ? status : null;
-  const total = selected ? counts[selected] : totalAll;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
 
   const rows = await db
     .select({
       id: reports.id,
-      status: reports.status,
       createdAt: reports.createdAt,
       creatorFirstName: profiles.firstName,
       creatorLastName: profiles.lastName,
@@ -124,22 +99,13 @@ export async function getSiteReports({
     })
     .from(reports)
     .leftJoin(profiles, eq(profiles.id, reports.createdBy))
-    .where(and(...base, selected ? eq(reports.status, selected) : undefined))
-    .orderBy(desc(reports.createdAt))
+    .where(where)
+    // The id keeps the order stable between pages if two reports share a timestamp.
+    .orderBy(desc(reports.createdAt), desc(reports.id))
     .limit(PAGE_SIZE)
     .offset((currentPage - 1) * PAGE_SIZE);
 
-  return {
-    rows,
-    total,
-    totalAll,
-    page: currentPage,
-    pageCount,
-    options: [
-      { value: "all", label: "All", count: totalAll },
-      ...allowed.map((s) => ({ value: s as string, label: LABEL[s] ?? s, count: counts[s] })),
-    ],
-  };
+  return { rows, total, page: currentPage, pageCount };
 }
 
 export type SiteReportsResult = Awaited<ReturnType<typeof getSiteReports>>;

@@ -6,7 +6,7 @@ import { AdminPage, EmptyState, Panel } from "@/components/admin-ui";
 
 import { requireRole } from "@/lib/auth";
 import { getSiteReports, parseReportFilters } from "@/lib/queries/site-reports";
-import { REPORT_VISIBILITY } from "@/lib/report-access"
+// import { REPORT_VISIBILITY } from "@/lib/report-access"
 import { SiteReportsSection } from "@/components/reports/site-reports-section";
 
 export const metadata: Metadata = { title: "Reports" };
@@ -50,9 +50,9 @@ async function SecretaryReports({ searchParams }: PageProps) {
   }
 
   // Drafts stay private to the foreman, so they are never offered or returned.
-  const allowed = REPORT_VISIBILITY.secretary;
-  const filters = parseReportFilters(await searchParams, allowed);
-  const data = await getSiteReports({ siteId: user.siteId, allowed, ...filters });
+  // const allowed = REPORT_VISIBILITY.secretary;
+  const filters = parseReportFilters(await searchParams);
+  const data = await getSiteReports({ siteId: user.siteId, ...filters });
 
   return (
     <SiteReportsSection

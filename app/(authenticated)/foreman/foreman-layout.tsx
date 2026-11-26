@@ -2,29 +2,44 @@
 
 import { EngineerArt } from "@/components/engineer-art";
 import { APP_NAME, ICONS, NavIcon } from "@/components/nav-icon";
-import { AppShell, Avatar, Badge, Burger, Button, Group, Stack, Text } from "@mantine/core";
+import type { Role } from "@/types/user";
+import {
+  AppShell,
+  Avatar,
+  Burger,
+  Button,
+  Group,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-
-
-export type RoleNavItem = { label: string; href: string; icon: keyof typeof ICONS };
+export type RoleNavItem = {
+  label: string;
+  href: string;
+  icon: keyof typeof ICONS;
+};
 
 type RoleLayoutProps = {
-  consoleLabel: string; // e.g. "Foreman console"
-  roleBadge: string; // e.g. "Foreman"
-  homeHref: string; // the role's dashboard; it only matches exactly
+  roleBadge: string;
+  homeHref: string;
   navItems: RoleNavItem[];
-  user: { firstName: string; lastName: string; email: string | undefined };
-  siteName: string | null; // shown in the sidebar
+  user: {
+    firstName: string;
+    lastName: string;
+    email: string | undefined;
+    role: Role;
+  };
+  siteName: string | null;
   signOutAction: () => Promise<void>;
   children: ReactNode;
 };
 
 export function RoleLayout({
-
+  roleBadge,
   homeHref,
   navItems,
   user,
@@ -38,20 +53,25 @@ export function RoleLayout({
   const isActive = (href: string) =>
     href === homeHref
       ? pathname === href
-      : pathname === href || pathname.startsWith(href + "/");
+      : pathname === href || pathname.startsWith(`${href}/`);
 
-  const current = navItems.find((item) => isActive(item.href));
-  const name = [user.firstName, user.lastName].filter(Boolean).join(" ") ;
-  const initials =
-    [user.firstName, user.lastName]
-      .filter(Boolean)
-      .map((n) => n.charAt(0).toUpperCase())
-      .join("")
+  const name = [user.firstName, user.lastName]
+    .filter(Boolean)
+    .join(" ");
+
+  const initials = [user.firstName, user.lastName]
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
 
   return (
     <AppShell
       header={{ height: 64 }}
-      navbar={{ width: 260, breakpoint: "sm", collapsed: { mobile: !opened } }}
+      navbar={{
+        width: 260,
+        breakpoint: "sm",
+        collapsed: { mobile: !opened },
+      }}
       padding="md"
       styles={{
         header: {
@@ -70,7 +90,7 @@ export function RoleLayout({
     >
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
-            <Group gap="sm" wrap="nowrap">
+          <Group gap="sm" wrap="nowrap">
             <Burger
               opened={opened}
               onClick={toggle}
@@ -81,7 +101,7 @@ export function RoleLayout({
 
             <div className="flex items-center">
               <h2 className="text-lg font-bold leading-tight text-slate-900 dark:text-white">
-                Foreman
+                {roleBadge} Console
               </h2>
             </div>
           </Group>
@@ -89,13 +109,17 @@ export function RoleLayout({
           <Group gap="md" wrap="nowrap">
             <Group gap="sm" wrap="nowrap">
               <Avatar color="yellow" radius="xl">
-                {initials}
+                {initials || "U"}
               </Avatar>
 
               <Stack gap={0} visibleFrom="sm">
                 <Group gap={6} wrap="nowrap">
                   <Text size="sm" fw={600}>
-                    {name}
+                    {name || "User"}
+                  </Text>
+
+                  <Text size="xs" c="dimmed">
+                    {roleBadge}
                   </Text>
                 </Group>
 
@@ -104,6 +128,7 @@ export function RoleLayout({
                 </Text>
               </Stack>
             </Group>
+
             <form action={signOutAction}>
               <Button type="submit" variant="filled" color="red" size="sm">
                 Sign out
@@ -116,7 +141,7 @@ export function RoleLayout({
       <AppShell.Navbar>
         <div className="relative flex h-full flex-col overflow-hidden text-slate-200">
           {/* Blueprint grid */}
-        <div
+          <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0"
             style={{
@@ -130,17 +155,25 @@ export function RoleLayout({
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-400 text-lg font-extrabold text-slate-900">
               {APP_NAME.charAt(0)}
             </div>
+
             <div>
-              <p className="text-base font-semibold leading-tight text-white">{APP_NAME}</p>
+              <p className="text-base font-semibold leading-tight text-white">
+                {APP_NAME}
+              </p>
+
               <p className="text-[11px] font-semibold uppercase leading-tight tracking-widest text-amber-400">
                 Site management
               </p>
             </div>
           </div>
 
-          <nav aria-label="Foreman" className="relative z-10 flex flex-col gap-1 px-3 pt-2">
+          <nav
+            aria-label={`${roleBadge} navigation`}
+            className="relative z-10 flex flex-col gap-1 px-3 pt-2"
+          >
             {navItems.map((item) => {
               const active = isActive(item.href);
+
               return (
                 <Link
                   key={item.href}
@@ -164,7 +197,10 @@ export function RoleLayout({
             <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
               Your site
             </p>
-            <p className="mt-1 text-sm font-medium text-white">{siteName ?? "No site assigned"}</p>
+
+            <p className="mt-1 text-sm font-medium text-white">
+              {siteName ?? "No site assigned"}
+            </p>
           </div>
 
           <EngineerArt />

@@ -6,7 +6,7 @@ import { Suspense } from "react";
 import { AdminPage } from "@/components/admin-ui";
 import { ReportDetailsView } from "@/components/reports/report-details-view";
 import { requireRole } from "@/lib/auth";
-import { REPORT_VISIBILITY } from "@/lib/report-access";
+// import { REPORT_VISIBILITY } from "@/lib/report-access";
 import { getReportDetails } from "@/lib/queries/report-details";
 
 export const metadata: Metadata = { title: "Report" };
@@ -31,7 +31,7 @@ async function AdminReport({ params }: PageProps) {
   await requireRole("admin"); // check access before any query runs
 
   const { id } = await params;
-  const report = await getReportDetails({ id, allowed: REPORT_VISIBILITY.admin });
+  const report = await getReportDetails({ id});
   if (!report) notFound();
 
   return (

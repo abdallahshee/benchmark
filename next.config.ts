@@ -5,6 +5,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   experimental: {
+    // Every area here is behind a sign-in, so the validator can't render them.
+    instantInsights: { validationLevel: "manual-warning" },
+
     agentFeedback: true,
     // Enables forbidden() / app/forbidden.tsx for role checks.
     authInterrupts: true,

@@ -6,7 +6,7 @@ import { Suspense } from "react";
 import { AdminPage } from "@/components/admin-ui";
 import { ReportDetailsView } from "@/components/reports/report-details-view";
 import { requireRole } from "@/lib/auth";
-import { REPORT_VISIBILITY } from "@/lib/report-access";
+// import { REPORT_VISIBILITY } from "@/lib/report-access";
 import { getReportDetails } from "@/lib/queries/report-details";
 
 export const metadata: Metadata = { title: "Report" };
@@ -34,7 +34,7 @@ async function SecretaryReport({ params }: PageProps) {
   const { id } = await params;
   const report = await getReportDetails({
     id,
-    allowed: REPORT_VISIBILITY.secretary, // drafts stay private to the foreman
+    // allowed: REPORT_VISIBILITY.secretary, // drafts stay private to the foreman
     siteId: user.siteId,
   });
   if (!report) notFound();

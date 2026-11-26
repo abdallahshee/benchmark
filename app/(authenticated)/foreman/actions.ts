@@ -21,53 +21,53 @@ export const getSiteSummary = cache(async (siteId: string) => {
   return site ?? null;
 });
 
-export async function getForemanDashboard(siteId: string) {
-  const [site, todayRows, statusRows, recent] = await Promise.all([
-    getSiteSummary(siteId),
 
-    // The report for today's date, if one exists. One report per site per day.
+
+// A report has no date column: its day is the day it was created, in the site's time zone.
+const reportDay = sql`((${reports.createdAt} at time zone ${TZ})::date)`;
+const todayDate = sql`((now() at time zone ${TZ})::date)`;
+
+// Everything the foreman's dashboard shows for one site. This function does NOT check
+// access: callers must call requireRole("foreman") first and pass the site from the
+// signed-in user's profile, never from the browser.
+export async function getForemanDashboard(siteId: string) {
+  const [siteRows, todayRows, [stats], recent] = await Promise.all([
+    db.select({ id: sites.id, name: sites.name }).from(sites).where(eq(sites.id, siteId)).limit(1),
+
+    // The report created today, if there is one. A site has one report per day.
     db
-      .select({
-        id: reports.id,
-        status: reports.status,
-        notes: reports.notes,
-        createdAt: reports.createdAt,
-      })
+      .select({ id: reports.id, createdAt: reports.createdAt })
       .from(reports)
-      .where(
-        and(
-          eq(reports.siteId, siteId),
-          sql`${reports.createdAt} = (now() at time zone ${TZ})::date`,
-        ),
-      )
+      .where(and(eq(reports.siteId, siteId), sql`${reportDay} = ${todayDate}`))
       .limit(1),
 
     db
-      .select({ status: reports.status, total: count() })
-      .from(reports)
-      .where(eq(reports.siteId, siteId))
-      .groupBy(reports.status),
-
-    db
       .select({
-        id: reports.id,
-        reportDate: reports.createdAt,
-        status: reports.status,
-        notes:reports.notes,
-        createdAt: reports.createdAt,
+        total: count(),
+        thisMonth: sql<number>`count(*) filter (
+          where date_trunc('month', ${reports.createdAt} at time zone ${TZ})
+              = date_trunc('month', now() at time zone ${TZ})
+        )::int`,
       })
       .from(reports)
+      .where(eq(reports.siteId, siteId)),
+
+    db
+      .select({ id: reports.id, createdAt: reports.createdAt, notes: reports.notes })
+      .from(reports)
       .where(eq(reports.siteId, siteId))
-      .orderBy(desc(reports.createdAt), desc(reports.createdAt))
+      .orderBy(desc(reports.createdAt), desc(reports.id))
       .limit(5),
   ]);
 
-  const counts = { draft: 0, submitted: 0, approved: 0, rejected: 0 };
-  for (const row of statusRows) {
-    if (row.status in counts) counts[row.status as keyof typeof counts] = row.total;
-  }
-
-  return { site, today: todayRows[0] ?? null, counts, recent };
+  return {
+    site: siteRows[0] ?? null,
+    today: todayRows[0] ?? null,
+    total: stats.total,
+    thisMonth: stats.thisMonth,
+    recent,
+  };
 }
+
 
 export type ForemanDashboard = Awaited<ReturnType<typeof getForemanDashboard>>;

@@ -7,6 +7,7 @@ dayjs.extend(timezone);
 
 const TZ = "Africa/Nairobi";
 
+
 // A report date is a calendar day with no time zone. Drizzle returns it as midnight
 // UTC, so format it as UTC. A local-time format could show the wrong day on a server
 // in a negative-offset time zone.
@@ -29,3 +30,12 @@ const money = new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES
 
 // Database decimals arrive as strings, so accept both.
 export const formatMoney = (value: string | number) => money.format(Number(value));
+
+
+
+
+
+
+
+// A calendar day taken from a timestamp, shown in the site's time zone, e.g. "24 Nov 2026".
+export const formatDay = (d: Date | string) => dayjs(d).tz(TZ).format("DD MMM YYYY");

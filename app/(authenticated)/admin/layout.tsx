@@ -4,11 +4,6 @@ import { ReactNode, Suspense } from "react";
 import { AdminLayout, NavItem } from "./admin-layout";
 
 
-
-
-
-
-
 export default function AuthenticatedLayout({ children }: { children: ReactNode }) {
   return (
     <Suspense fallback={<div style={{ minHeight: "100vh" }} />}>

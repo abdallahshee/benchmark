@@ -27,7 +27,6 @@ async function ForemanShell({ children }: { children: ReactNode }) {
 
   return (
     <RoleLayout
-      consoleLabel="Foreman console"
       roleBadge="Foreman"
       homeHref="/foreman"
       navItems={NAV}

@@ -2,6 +2,7 @@
 
 import { EngineerArt } from "@/components/engineer-art";
 import { APP_NAME, ICONS, NavIcon } from "@/components/nav-icon";
+import { Role } from "@/types/user";
 import { AppShell, Avatar, Badge, Burger, Button, Group, Stack, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import Link from "next/link";
@@ -22,7 +23,11 @@ const navItems: NavItem[] = [
 ];
 
 type AdminLayoutProps = {
-  user: { firstName: string | null; lastName: string | null; email: string | undefined };
+  user: {
+     firstName: string | null;
+      lastName: string | null; 
+      email: string | undefined,
+      role:Role };
   signOutAction: () => Promise<void>;
   children: ReactNode;
 };
@@ -44,7 +49,7 @@ export function AdminLayout({ user, signOutAction, children }: AdminLayoutProps)
         (o) => o.href !== href && o.href.startsWith(href + "/") && pathname.startsWith(o.href),
       ));
 
-  const current = navItems.find((item) => isActive(item.href));
+  // const current = navItems.find((item) => isActive(item.href));
   const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Administrator";
   const initials =
     [user.firstName, user.lastName]
@@ -85,7 +90,7 @@ export function AdminLayout({ user, signOutAction, children }: AdminLayoutProps)
 
             <div className="flex items-center">
               <h2 className="text-lg font-bold leading-tight text-slate-900 dark:text-white">
-                Admin
+                Admin Console
               </h2>
             </div>
           </Group>
