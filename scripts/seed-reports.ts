@@ -1,7 +1,7 @@
 
-import { and, eq, isNotNull, sql } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 
-import { db } from "../db";
+import { db } from "../db/seed-client";
 import {
     profiles,
     reports,

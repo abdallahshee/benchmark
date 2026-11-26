@@ -47,23 +47,23 @@ const ONE_PER_SCOPE: SeedRole[] = [
 const USERS: SeedUser[] = [
     {
         role: "admin",
-        email: "abdallahshee664@gmail.com",
-        password: "Shee@1234",
+        email: "admin.example@gmail.com",
+        password: "Admin@2026",
         firstName: "Abdallah",
         lastName: "Shee",
         phone: "0796515302",
     },
     {
         role: "foreman",
-        email: "developershee@gmail.com",
-        password: "Morgan@2026",
+        email: "foreman.example@gmail.com",
+        password: "Foreman@2026",
         firstName: "Developer",
         lastName: "Morgan",
         phone: "0747515302",
     },
     {
         role: "secretary",
-        email: "amina.wanjiru@example.com",
+        email: "secretary.example@gmail.com",
         password: "Secretary@2026",
         firstName: "Amina",
         lastName: "Wanjiru",
@@ -71,7 +71,7 @@ const USERS: SeedUser[] = [
     },
     {
         role: "worker",
-        email: "joseph.otieno@example.com",
+        email: "worker.example@example.com",
         password: "Worker@2026",
         firstName: "Joseph",
         lastName: "Otieno",

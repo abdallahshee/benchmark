@@ -30,7 +30,7 @@ export default function ForemanReportsPage({ searchParams }: PageProps) {
       title="Reports"
       description="Your site's reports, newest first."
       back={{ href: "/foreman", label: "Dashboard" }}
-      actions={<LinkButton href="/foreman/reports/today">Today&apos;s report</LinkButton>}
+      actions={<LinkButton href="/foreman/reports/new">Today&apos;s report</LinkButton>}
     >
       <Suspense fallback={<Skeleton height={420} radius="md" />}>
         <ForemanReports searchParams={searchParams} />

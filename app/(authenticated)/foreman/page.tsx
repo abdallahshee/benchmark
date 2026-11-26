@@ -26,14 +26,14 @@ export const metadata: Metadata = {
     title: "Dashboard",
 };
 
-const TODAY_HREF = "/foreman/reports/today";
+const TODAY_HREF = "/foreman/reports/new";
 
 // Today's report summary and action.
 function todaySummary(report: ForemanDashboard["today"]) {
     if (!report) {
         return {
             text: "You haven't started today's report yet.",
-            cta: "Start today's report",
+            cta: "Create today's report",
             href: TODAY_HREF,
         };
     }

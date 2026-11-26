@@ -12,6 +12,11 @@ import { RoleLayout } from "../foreman/foreman-layout";
 const NAV: RoleNavItem[] = [
   { label: "Dashboard", href: "/secretary", icon: "dashboard" },
   { label: "Reports", href: "/secretary/reports", icon: "reports" },
+  { label: "Sites", href: "/secretary/sites", icon: "sites" },
+  { label: "Users", href: "/secretary/users", icon: "users" },
+
+
+
 ];
 
 export default function SecretaryLayout({ children }: { children: ReactNode }) {
