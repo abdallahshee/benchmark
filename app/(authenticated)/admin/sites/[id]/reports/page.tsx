@@ -8,7 +8,7 @@ import type { ReportStatus } from "@/db/schema";
 import { requireRole } from "@/lib/auth";
 import { getSiteReports, parseReportFilters } from "@/lib/queries/site-reports";
 import { getSiteById } from "../action";
-import { SiteReportsSection } from "@/components/site-reports-section";
+import { SiteReportsSection } from "@/components/reports/site-reports-section";
 
 export const metadata: Metadata = { title: "Site reports" };
 
