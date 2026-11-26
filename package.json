@@ -12,8 +12,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-     "db:seed": "tsx --env-file=.env scripts/seed.ts"
-
+    "db:seed": "tsx --env-file=.env scripts/seed.ts"
   },
   "dependencies": {
     "@mantine/core": "^9.8.1",
@@ -29,6 +28,7 @@
     "drizzle-zod": "^0.8.3",
     "lucide-react": "^1.77.0",
     "next": "16.4.6",
+    "pdf-lib": "^1.17.1",
     "postgres": "^4.1.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
