@@ -1,14 +1,15 @@
 import { db } from "@/db";
 import { profiles, reports, sites } from "@/db/schema";
+import { isUuid, TZ } from "@/lib/helper";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { cache } from "react";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // A malformed id would make Postgres throw, so every function treats it as "not found".
-const isUuid = (value: string) => UUID_RE.test(value);
+// const isUuid = (value: string) => UUID_RE.test(value);
 
 // "Today" depends on the time zone. Change this if your sites are elsewhere.
-const TZ = sql.raw("'Africa/Nairobi'");
+
 
 // None of these functions check access: callers must call requireRole() first.
 
@@ -74,18 +75,16 @@ export const getForemanBySiteId = cache(async (siteId: string) => {
 });
 
 // The reports of a site, latest first: by report date, then by creation time.
+
 export const getReportsBySiteId = cache(async (siteId: string, limit = 50) => {
-  if (!isUuid(siteId)) return [];
+  if (!isUuid(siteId)) return []; // a malformed id would make Postgres throw
 
   return db
-    .select({
-      id: reports.id,
-      createdAt: reports.createdAt,
-      status: reports.status,
-    })
+    .select({ id: reports.id, createdAt: reports.createdAt })
     .from(reports)
     .where(eq(reports.siteId, siteId))
-    .orderBy(desc(reports.createdAt))
+    // The id keeps the order stable if two reports share a timestamp.
+    .orderBy(desc(reports.createdAt), desc(reports.id))
     .limit(limit);
 });
 

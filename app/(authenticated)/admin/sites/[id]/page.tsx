@@ -1,4 +1,4 @@
-import { Anchor, Divider, Group, SimpleGrid, Skeleton, Stack, Text } from "@mantine/core";
+import { Anchor, Button, Divider, Group, SimpleGrid, Skeleton, Stack, Text } from "@mantine/core";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -8,18 +8,13 @@ import {
   Avatar,
   Field,
   Panel,
-  ReportStatusBadge,
   SiteStatusBadge,
   initialsOf,
 } from "@/components/admin-ui";
 import { LinkButton } from "@/components/link-button";
 import { requireRole } from "@/lib/auth";
-import { displayName, formatDate, formatDateTime } from "@/lib/formats";
-import {
-  getForemanBySiteId,
-  getReportsBySiteId,
-  getSiteById,
-} from "./action";
+import { displayName, formatDateTime, formatDay } from "@/lib/formats";
+import { getForemanBySiteId, getReportsBySiteId, getSiteById } from "./action";
 import { getSecretaryBySiteId } from "../actions";
 
 export const metadata: Metadata = { title: "Site details" };
@@ -42,7 +37,6 @@ export default function SiteDetailsPage({ params }: PageProps) {
   );
 }
 
-// One staff member's card, or a prompt to add one when the position is empty.
 // One staff member's card. An empty position offers an Add button; a filled one says
 // why no more can be added.
 function PersonPanel({
@@ -135,12 +129,12 @@ async function SiteDetails({ params }: PageProps) {
         <PersonPanel
           roleLabel="Foreman"
           person={foreman}
-          addHref={`/admin/sites/${site.id}/users/new`}
+          addHref={`/admin/sites/${site.id}/users/new?role=foreman`}
         />
         <PersonPanel
           roleLabel="Secretary"
           person={secretary}
-          addHref={`/admin/sites/${site.id}/users/new`}
+          addHref={`/admin/sites/${site.id}/users/new?role=secretary`}
         />
       </SimpleGrid>
 
@@ -166,14 +160,21 @@ async function SiteDetails({ params }: PageProps) {
                 <Group justify="space-between" px="lg" py="sm" wrap="nowrap">
                   <div>
                     <Text fw={600} size="sm">
-                      {formatDate(r.createdAt)}
+                      {formatDay(r.createdAt)}
                     </Text>
                     <Text size="xs" c="dimmed">
-                      Created {formatDateTime(r.createdAt)}
+                      Submitted {formatDateTime(r.createdAt)}
                     </Text>
                   </div>
-                  <Group gap="sm" wrap="nowrap">
-                    <ReportStatusBadge status={r.status} />
+                  <Group gap="xs" wrap="nowrap">
+                    <Button
+                      component="a"
+                      href={`/api/reports/${r.id}/pdf`}
+                      size="xs"
+                      variant="default"
+                    >
+                      PDF
+                    </Button>
                     <LinkButton href={`/admin/reports/${r.id}`} size="xs" variant="light">
                       Read
                     </LinkButton>
