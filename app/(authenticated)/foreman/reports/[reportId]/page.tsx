@@ -5,15 +5,16 @@ import { Suspense } from "react";
 
 import { AdminPage } from "@/components/admin-ui";
 import { ReportDetailsView } from "@/components/reports/report-details-view";
-import { getCurrentUser } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { getReportDetails } from "@/lib/queries/report-details";
+import { getForemanSite } from "../../actions";
 
 export const metadata: Metadata = {
   title: "Report",
 };
 
 type PageProps = {
-  params: Promise<{ id: string }>;
+  params: Promise<{ reportId: string }>;
 };
 
 export default function UserReportPage({ params }: PageProps) {
@@ -34,17 +35,20 @@ export default function UserReportPage({ params }: PageProps) {
 }
 
 async function AppReport({ params }: PageProps) {
-  // Only authenticated users can access reports.
-  const user = await getCurrentUser();
+  const user = await requireRole("foreman");
 
-  if (!user) {
+  const { reportId } = await params;
+
+  const site = await getForemanSite(user.id);
+
+  if (!site) {
     notFound();
   }
 
-  const { id } = await params;
-
-  // Any authenticated user can open any report.
-  const report = await getReportDetails({ id });
+  const report = await getReportDetails({
+    reportId,
+    siteId: site.id,
+  });
 
   if (!report) {
     notFound();

@@ -11,6 +11,7 @@ import { RoleLayout, RoleNavItem } from "./foreman-layout";
 const NAV: RoleNavItem[] = [
   { label: "Dashboard", href: "/foreman", icon: "dashboard" },
   { label: "Reports", href: "/foreman/reports", icon: "reports" },
+  {label: "Workers", href: "/foreman/workers", icon: "users"}
 ];
 
 export default function ForemanLayout({ children }: { children: ReactNode }) {

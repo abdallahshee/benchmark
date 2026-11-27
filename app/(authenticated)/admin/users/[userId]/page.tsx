@@ -19,7 +19,7 @@ import { getUserById } from "../actions";
 
 export const metadata: Metadata = { title: "User details" };
 
-type PageProps = { params: Promise<{ id: string }> };
+type PageProps = { params: Promise<{ userId: string }> };
 
 export default function UserDetailsPage({ params }: PageProps) {
   return (
@@ -38,8 +38,8 @@ export default function UserDetailsPage({ params }: PageProps) {
 async function UserDetails({ params }: PageProps) {
   await requireRole("admin"); // check access before any query runs
 
-  const { id } = await params;
-  const user = await getUserById(id);
+  const { userId } = await params;
+  const user = await getUserById(userId);
   if (!user) notFound();
 
   const name = displayName(user);

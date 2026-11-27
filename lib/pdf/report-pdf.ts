@@ -187,6 +187,7 @@ export async function generateReportPdf(report: ReportDetails): Promise<Uint8Arr
     ["Report date", formatDay(report.createdAt)],
     // A report is submitted the moment it is created, so there is one timestamp.
     ["Submitted", formatDateTime(report.createdAt)],
+    ["Workers on duty", String(report.workers.length)],
     ["Machines in operation", String(machineCount)],
     ["Materials cost", formatMoney(report.materialsTotal)],
   ];
@@ -237,6 +238,26 @@ export async function generateReportPdf(report: ReportDetails): Promise<Uint8Arr
     y -= 14;
   }
   y -= 16;
+
+  // ---------- Workers ----------
+  const workerHours = report.workers.reduce((n, w) => n + Number(w.hours), 0);
+  section("Workers on duty", `${report.workers.length} ${report.workers.length === 1 ? "worker" : "workers"}`);
+  if (report.workers.length === 0) {
+    text("No workers were recorded in this report.", MARGIN, y, 10, regular, MUTED);
+    y -= 14;
+  } else {
+    table(
+      [
+        { header: "Name", width: CONTENT_W - 285 },
+        { header: "Trade", width: 95 },
+        { header: "Phone", width: 105 },
+        { header: "Hours worked", width: 85, align: "right" },
+      ],
+      report.workers.map((w) => [displayName(w), w.trade, w.phone || "-", String(w.hours)]),
+      ["Total", "", "", workerHours.toFixed(2)],
+    );
+  }
+  y -= 22;
 
   // ---------- Machineries ----------
   section("Machineries", `${report.machineries.length} ${report.machineries.length === 1 ? "category" : "categories"}`);

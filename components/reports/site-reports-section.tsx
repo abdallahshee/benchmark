@@ -14,7 +14,8 @@ import { EmptyState, Panel, Th } from "@/components/admin-ui";
 import { LinkButton } from "@/components/link-button";
 import { displayName, formatDay, formatMoney } from "@/lib/formats";
 import { PAGE_SIZE, type ReportFilters, type SiteReportsResult } from "@/lib/queries/site-reports";
-import { ReportsPagination, ReportsToolbar } from "../reports-toolbar";
+import { ReportsPagination, ReportsToolbar } from "./reports-toolbar";
+
 
 type Props = {
   data: SiteReportsResult;

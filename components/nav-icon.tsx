@@ -16,6 +16,16 @@ export const ICONS = {
       <path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.6c1.8.8 3 2.6 3 5.4" />
     </>
   ),
+  workers: (
+  <>
+    <circle cx="12" cy="7" r="3" />
+    <circle cx="5" cy="10" r="2.5" />
+    <circle cx="19" cy="10" r="2.5" />
+    <path d="M5 21v-2a7 7 0 0 1 14 0v2" />
+    <path d="M1.5 21v-1.5a4 4 0 0 1 4-4" />
+    <path d="M22.5 21v-1.5a4 4 0 0 0-4-4" />
+  </>
+),
   sites: (
     <>
       <path d="M3 21h18" />

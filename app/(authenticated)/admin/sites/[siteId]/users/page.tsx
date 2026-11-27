@@ -9,6 +9,7 @@ import {
   TableTr,
   Text,
   Group,
+  Button,
 } from "@mantine/core";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -22,6 +23,7 @@ import { SITE_ROLES } from "@/lib/site-roles";
 
 import { getSiteById } from "../action";
 import { getUsersBySiteId } from "../../actions";
+import { LinkButton } from "@/components/link-button";
 
 export const metadata: Metadata = {
   title: "Site users",
@@ -112,7 +114,7 @@ async function SiteUsers({ params }: PageProps) {
             text="Use Add foreman or Add secretary to invite the site's staff."
           />
         ) : (
-          <TableScrollContainer minWidth={560}>
+          <TableScrollContainer minWidth={680}>
             <Table
               verticalSpacing="sm"
               horizontalSpacing="lg"
@@ -124,6 +126,7 @@ async function SiteUsers({ params }: PageProps) {
                   <Th>Email</Th>
                   <Th>Phone</Th>
                   <Th>Role</Th>
+                  <Th ta="right">Action</Th>
                 </TableTr>
               </TableThead>
 
@@ -152,6 +155,19 @@ async function SiteUsers({ params }: PageProps) {
                           No role
                         </Text>
                       )}
+                    </TableTd>
+
+                    <TableTd>
+                      <Group justify="flex-end">
+                        <LinkButton
+                          href={`/admin/users/${user.id}`}
+                          size="xs"
+                          variant="light"
+                          color="blue"
+                        >
+                          View details
+                        </LinkButton>
+                      </Group>
                     </TableTd>
                   </TableTr>
                 ))}

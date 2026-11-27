@@ -8,8 +8,6 @@ import { cache } from "react";
 // const TZ = sql.raw("'Africa/Nairobi'");
 import "server-only";
 
-
-
 // "Created" days are compared in the site's time zone. Change this if your sites are elsewhere.
 // const TZ = sql.raw("'Africa/Nairobi'");
 

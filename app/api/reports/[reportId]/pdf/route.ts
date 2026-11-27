@@ -2,7 +2,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { generateReportPdf } from "@/lib/pdf/report-pdf";
 import { getReportDetails, type ReportDetails } from "@/lib/queries/report-details";
 
-type RouteContext = { params: Promise<{ id: string }> };
+type RouteContext = { params: Promise<{ reportId: string }> };
 
 const plain = (message: string, status: number) =>
   new Response(message, { status, headers: { "Cache-Control": "no-store" } });
@@ -11,15 +11,15 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const user = await getCurrentUser();
   if (!user) return plain("Please sign in.", 401);
 
-  const { id } = await params;
+  const { reportId } = await params;
 
   // The admin may open any site's report; the foreman and secretary only their own
   // site's, taken from their profile and never from the URL.
   let report: ReportDetails | null;
   if (user.role === "admin") {
-    report = await getReportDetails({ id });
+    report = await getReportDetails({ reportId });
   } else if ((user.role === "foreman" || user.role === "secretary") && user.siteId) {
-    report = await getReportDetails({ id, siteId: user.siteId });
+    report = await getReportDetails({ reportId, siteId: user.siteId });
   } else {
     return plain("You don't have access to reports.", 403);
   }

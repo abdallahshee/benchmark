@@ -7,7 +7,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   admin: "admin",
   foreman: "foreman",
   secretary: "secretary",
-  worker:"worker"
+  // worker:"worker"
 };
 // import type { Role } from "@/types/user";
 

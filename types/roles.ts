@@ -6,5 +6,5 @@ export const ROLE_HOME_PATHS = {
     admin: "/admin",
     foreman: "/foreman",
     secretary: "/secretary",
-    worker: "/worker",
+    // worker: "/worker",
 } as const;

@@ -11,7 +11,7 @@ import { getReportDetails } from "@/lib/queries/report-details";
 
 export const metadata: Metadata = { title: "Report" };
 
-type PageProps = { params: Promise<{ id: string }> };
+type PageProps = { params: Promise<{ reportId: string }> };
 
 export default function AdminReportPage({ params }: PageProps) {
   return (
@@ -30,8 +30,8 @@ export default function AdminReportPage({ params }: PageProps) {
 async function AdminReport({ params }: PageProps) {
   await requireRole("admin"); // check access before any query runs
 
-  const { id } = await params;
-  const report = await getReportDetails({ id});
+  const { reportId} = await params;
+  const report = await getReportDetails({ reportId});
   if (!report) notFound();
 
   return (

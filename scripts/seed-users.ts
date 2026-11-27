@@ -69,14 +69,7 @@ const USERS: SeedUser[] = [
         lastName: "Wanjiru",
         phone: "0712345678",
     },
-    {
-        role: "worker",
-        email: "worker.example@example.com",
-        password: "Worker@2026",
-        firstName: "Joseph",
-        lastName: "Otieno",
-        phone: "0722334455",
-    },
+
 ];
 
 async function ensureSite(name: string): Promise<string> {

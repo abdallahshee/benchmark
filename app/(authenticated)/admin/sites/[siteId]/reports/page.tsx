@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Site reports" };
 // const ALLOWED: readonly ReportStatus[] = ["approved", "rejected"];
 
 type PageProps = {
-  params: Promise<{ id: string }>;
+  params: Promise<{ siteId: string }>;
   searchParams: Promise<{
     status?: string | string[];
     from?: string | string[];
@@ -42,8 +42,8 @@ export default function SiteReportsPage({ params, searchParams }: PageProps) {
 async function SiteReports({ params, searchParams }: PageProps) {
   await requireRole("admin"); // check access before any query runs
 
-  const { id } = await params;
-  const site = await getSiteById(id);
+  const { siteId } = await params;
+  const site = await getSiteById(siteId);
   if (!site) notFound();
 
   const filters = parseReportFilters(await searchParams);

@@ -14,6 +14,7 @@ const NAV: RoleNavItem[] = [
   { label: "Reports", href: "/secretary/reports", icon: "reports" },
   { label: "Sites", href: "/secretary/sites", icon: "sites" },
   { label: "Users", href: "/secretary/users", icon: "users" },
+  {label: "Workers",href: "/secretary/workers", icon: "workers"}
 
 
 

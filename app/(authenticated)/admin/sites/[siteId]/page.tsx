@@ -1,4 +1,14 @@
-import { Anchor, Button, Divider, Group, SimpleGrid, Skeleton, Stack, Text } from "@mantine/core";
+
+import {
+  Anchor,
+  Button,
+  Divider,
+  Group,
+  SimpleGrid,
+  Skeleton,
+  Stack,
+  Text,
+} from "@mantine/core";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -12,33 +22,33 @@ import {
   initialsOf,
 } from "@/components/admin-ui";
 import { LinkButton } from "@/components/link-button";
+import { SiteWorkers } from "@/components/workers/site-workers";
 import { requireRole } from "@/lib/auth";
 import { displayName, formatDateTime, formatDay } from "@/lib/formats";
-import { getForemanBySiteId, getReportsBySiteId, getSiteById } from "./action";
+import { getWorkersBySiteId } from "@/lib/workers";
+
+import {
+  getForemanBySiteId,
+  getReportsBySiteId,
+  getSiteById,
+} from "./action";
 import { getSecretaryBySiteId } from "../actions";
 
-export const metadata: Metadata = { title: "Site details" };
+export const metadata: Metadata = {
+  title: "Site details",
+};
 
-type PageProps = { params: Promise<{ id: string }> };
+type PageProps = {
+  params: Promise<{ siteId: string }>;
+};
 
-type Person = { firstName: string; lastName: string; phone: string; email: string | null };
+type Person = {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string | null;
+};
 
-export default function SiteDetailsPage({ params }: PageProps) {
-  return (
-    <Suspense
-      fallback={
-        <AdminPage title="Site" back={{ href: "/admin/sites", label: "Sites" }}>
-          <Skeleton height={400} radius="md" />
-        </AdminPage>
-      }
-    >
-      <SiteDetails params={params} />
-    </Suspense>
-  );
-}
-
-// One staff member's card. An empty position offers an Add button; a filled one says
-// why no more can be added.
 function PersonPanel({
   roleLabel,
   person,
@@ -58,6 +68,7 @@ function PersonPanel({
             <Avatar color="yellow" radius="xl" size="lg">
               {initialsOf(person)}
             </Avatar>
+
             <div>
               <Text fw={600}>{displayName(person)}</Text>
               <Text size="sm" c="dimmed">
@@ -65,6 +76,7 @@ function PersonPanel({
               </Text>
             </div>
           </Group>
+
           <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="md">
             <Field label="Phone">
               {person.phone ? (
@@ -75,6 +87,7 @@ function PersonPanel({
                 <Text size="sm">—</Text>
               )}
             </Field>
+
             <Field label="Email">
               {person.email ? (
                 <Anchor href={`mailto:${person.email}`} size="sm">
@@ -85,13 +98,17 @@ function PersonPanel({
               )}
             </Field>
           </SimpleGrid>
+
           <Text size="xs" c="dimmed">
             This position is filled. A site can have only one {role}.
           </Text>
         </Stack>
       ) : (
         <Stack gap="xs" align="flex-start">
-          <Text c="dimmed">No {role} is assigned to this site yet.</Text>
+          <Text c="dimmed">
+            No {role} is assigned to this site yet.
+          </Text>
+
           <LinkButton href={addHref} size="xs" variant="light">
             Add {role}
           </LinkButton>
@@ -101,17 +118,46 @@ function PersonPanel({
   );
 }
 
-async function SiteDetails({ params }: PageProps) {
-  await requireRole("admin"); // check access before any query runs
+export default function SiteDetailsPage({ params }: PageProps) {
+  return (
+    <Suspense
+      fallback={
+        <AdminPage
+          title="Site"
+          back={{ href: "/admin/sites", label: "Sites" }}
+        >
+          <Stack gap="lg">
+            <Skeleton height={120} radius="md" />
+            <SimpleGrid cols={{ base: 1, md: 2 }}>
+              <Skeleton height={180} radius="md" />
+              <Skeleton height={180} radius="md" />
+            </SimpleGrid>
+            <Skeleton height={220} radius="md" />
+            <Skeleton height={400} radius="md" />
+          </Stack>
+        </AdminPage>
+      }
+    >
+      <SiteDetails params={params} />
+    </Suspense>
+  );
+}
 
-  const { id } = await params;
-  const [site, foreman, secretary, latest] = await Promise.all([
-    getSiteById(id),
-    getForemanBySiteId(id),
-    getSecretaryBySiteId(id),
-    getReportsBySiteId(id, 3),
+async function SiteDetails({ params }: PageProps) {
+  const user = await requireRole("admin");
+  const { siteId } = await params;
+
+  const [site, foreman, secretary, latest, workers] = await Promise.all([
+    getSiteById(siteId),
+    getForemanBySiteId(siteId),
+    getSecretaryBySiteId(siteId),
+    getReportsBySiteId(siteId, 3),
+    getWorkersBySiteId(siteId),
   ]);
-  if (!site) notFound();
+
+  if (!site) {
+    notFound();
+  }
 
   return (
     <AdminPage
@@ -121,16 +167,21 @@ async function SiteDetails({ params }: PageProps) {
       actions={
         <Group gap="sm">
           <SiteStatusBadge status={site.status} />
-          <LinkButton href={`/admin/sites/${site.id}/users`}>Users</LinkButton>
+
+          <LinkButton href={`/admin/sites/${site.id}/users`}>
+            Users
+          </LinkButton>
         </Group>
       }
     >
+      {/* Site foreman and secretary */}
       <SimpleGrid cols={{ base: 1, md: 2 }}>
         <PersonPanel
           roleLabel="Foreman"
           person={foreman}
           addHref={`/admin/sites/${site.id}/users/new?role=foreman`}
         />
+
         <PersonPanel
           roleLabel="Secretary"
           person={secretary}
@@ -138,11 +189,16 @@ async function SiteDetails({ params }: PageProps) {
         />
       </SimpleGrid>
 
+      {/* Latest reports */}
       <Panel
         title="Latest reports"
         description="The three most recent"
         action={
-          <LinkButton href={`/admin/sites/${site.id}/reports`} size="xs" variant="light">
+          <LinkButton
+            href={`/admin/sites/${site.id}/reports`}
+            size="xs"
+            variant="light"
+          >
             All reports
           </LinkButton>
         }
@@ -154,28 +210,41 @@ async function SiteDetails({ params }: PageProps) {
           </Text>
         ) : (
           <Stack gap={0}>
-            {latest.map((r, i) => (
-              <div key={r.id}>
-                {i > 0 && <Divider />}
-                <Group justify="space-between" px="lg" py="sm" wrap="nowrap">
+            {latest.map((report, index) => (
+              <div key={report.id}>
+                {index > 0 && <Divider />}
+
+                <Group
+                  justify="space-between"
+                  px="lg"
+                  py="sm"
+                  wrap="nowrap"
+                >
                   <div>
                     <Text fw={600} size="sm">
-                      {formatDay(r.createdAt)}
+                      {formatDay(report.createdAt)}
                     </Text>
+
                     <Text size="xs" c="dimmed">
-                      Submitted {formatDateTime(r.createdAt)}
+                      Submitted {formatDateTime(report.createdAt)}
                     </Text>
                   </div>
+
                   <Group gap="xs" wrap="nowrap">
                     <Button
                       component="a"
-                      href={`/api/reports/${r.id}/pdf`}
+                      href={`/api/reports/${report.id}/pdf`}
                       size="xs"
                       variant="default"
                     >
                       PDF
                     </Button>
-                    <LinkButton href={`/admin/reports/${r.id}`} size="xs" variant="light">
+
+                    <LinkButton
+                      href={`/admin/reports/${report.id}`}
+                      size="xs"
+                      variant="light"
+                    >
                       Read
                     </LinkButton>
                   </Group>
@@ -185,6 +254,14 @@ async function SiteDetails({ params }: PageProps) {
           </Stack>
         )}
       </Panel>
+
+      {/* Workers assigned to this site */}
+      <SiteWorkers
+        workers={workers}
+        user={user}
+        title="Site workers"
+        description="All workers assigned to this construction site"
+      />
     </AdminPage>
   );
 }

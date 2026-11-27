@@ -96,13 +96,19 @@ type AdminPageProps = {
   children: ReactNode;
 };
 
-export function AdminPage({ title, description, back, actions, children }: AdminPageProps) {
+export function AdminPage({
+  title,
+  description,
+  back,
+  actions,
+  children,
+}: AdminPageProps) {
   return (
     <Stack
       component="main"
       gap="lg"
       p={{ base: "md", sm: "xl" }}
-      className="mx-auto w-full max-w-6xl flex-1"
+      className="mx-auto w-full max-w-7xl flex-1"
     >
       {back && (
         <AnchorLink href={back.href} size="sm">
@@ -112,7 +118,10 @@ export function AdminPage({ title, description, back, actions, children }: Admin
 
       <Group justify="space-between" align="flex-end" gap="md">
         <Group gap="sm" align="center" wrap="nowrap">
-          <span aria-hidden="true" className="h-10 w-1.5 shrink-0 rounded-full bg-amber-400" />
+          <span
+            aria-hidden="true"
+            className="h-10 w-1.5 shrink-0 rounded-full bg-amber-400"
+          />
           <div>
             <Title order={1} size="h2" lh={1.2}>
               {title}
@@ -260,11 +269,7 @@ const SITE_COLOR: Record<string, string> = {
   completed: "blue",
   archived: "gray",
 };
-const REPORT_COLOR: Record<string, string> = {
-  draft: "gray",
-  submitted: "green",
-  reopened: "yellow",
-};
+
 
 export function SiteStatusBadge({ status }: { status: string }) {
   return (

@@ -4,8 +4,8 @@ import { and, count, desc, eq, sql } from "drizzle-orm";
 import { cache } from "react";
 
 import { db } from "@/db";
-import { reports, sites } from "@/db/schema";
-import { TZ } from "@/lib/helper";
+import { profiles, reports, sites } from "@/db/schema";
+import { isUuid, TZ } from "@/lib/helper";
 
 // "Today" depends on the time zone. Change this if your sites are elsewhere.
 
@@ -69,5 +69,22 @@ export async function getForemanDashboard(siteId: string) {
   };
 }
 
+
+
+export const getForemanSite = cache(async (foremanId: string) => {
+  if (!isUuid(foremanId)) return null;
+
+  const [site] = await db
+    .select({
+      id: sites.id,
+      name: sites.name,
+    })
+    .from(profiles)
+    .innerJoin(sites, eq(profiles.siteId, sites.id))
+    .where(eq(profiles.id, foremanId))
+    .limit(1);
+
+  return site ?? null;
+});
 
 export type ForemanDashboard = Awaited<ReturnType<typeof getForemanDashboard>>;

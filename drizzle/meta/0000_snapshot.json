@@ -1,5 +1,5 @@
 {
-  "id": "6ebcca9a-d96c-4ec3-b97e-28b1293f2541",
+  "id": "fdf624f7-fb3d-4c30-854e-4eaa767a2194",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -20,13 +20,6 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'submitted'"
         },
         "notes": {
           "name": "notes",
@@ -124,12 +117,7 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {
-        "reports_submitted_at_check": {
-          "name": "reports_submitted_at_check",
-          "value": "\"reports\".\"status\" <> 'submitted' OR \"reports\".\"created_at\" IS NOT NULL"
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.sites": {
@@ -537,6 +525,338 @@
         "machineries_hours_check": {
           "name": "machineries_hours_check",
           "value": "\"machineries\".\"hours\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.workers": {
+      "name": "workers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id_number": {
+          "name": "id_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "trade": {
+          "name": "trade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "workers_id_number_unique": {
+          "name": "workers_id_number_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id_number"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "workers_first_name_check": {
+          "name": "workers_first_name_check",
+          "value": "length(trim(\"workers\".\"first_name\")) > 0"
+        },
+        "workers_last_name_check": {
+          "name": "workers_last_name_check",
+          "value": "length(trim(\"workers\".\"last_name\")) > 0"
+        },
+        "workers_phone_check": {
+          "name": "workers_phone_check",
+          "value": "length(trim(\"workers\".\"phone\")) > 0"
+        },
+        "workers_trade_check": {
+          "name": "workers_trade_check",
+          "value": "length(trim(\"workers\".\"trade\")) > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.site_workers": {
+      "name": "site_workers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "site_id": {
+          "name": "site_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "worker_id": {
+          "name": "worker_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "site_workers_site_id_idx": {
+          "name": "site_workers_site_id_idx",
+          "columns": [
+            {
+              "expression": "site_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "site_workers_worker_id_idx": {
+          "name": "site_workers_worker_id_idx",
+          "columns": [
+            {
+              "expression": "worker_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "site_workers_site_id_sites_id_fk": {
+          "name": "site_workers_site_id_sites_id_fk",
+          "tableFrom": "site_workers",
+          "tableTo": "sites",
+          "columnsFrom": [
+            "site_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "site_workers_worker_id_workers_id_fk": {
+          "name": "site_workers_worker_id_workers_id_fk",
+          "tableFrom": "site_workers",
+          "tableTo": "workers",
+          "columnsFrom": [
+            "worker_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "site_workers_site_worker_unique": {
+          "name": "site_workers_site_worker_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "site_id",
+            "worker_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.report_workers": {
+      "name": "report_workers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "report_id": {
+          "name": "report_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "worker_id": {
+          "name": "worker_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hours": {
+          "name": "hours",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "report_workers_report_id_idx": {
+          "name": "report_workers_report_id_idx",
+          "columns": [
+            {
+              "expression": "report_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "report_workers_worker_id_idx": {
+          "name": "report_workers_worker_id_idx",
+          "columns": [
+            {
+              "expression": "worker_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "report_workers_report_id_reports_id_fk": {
+          "name": "report_workers_report_id_reports_id_fk",
+          "tableFrom": "report_workers",
+          "tableTo": "reports",
+          "columnsFrom": [
+            "report_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "report_workers_worker_id_workers_id_fk": {
+          "name": "report_workers_worker_id_workers_id_fk",
+          "tableFrom": "report_workers",
+          "tableTo": "workers",
+          "columnsFrom": [
+            "worker_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "report_workers_report_worker_unique": {
+          "name": "report_workers_report_worker_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "report_id",
+            "worker_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "report_workers_hours_check": {
+          "name": "report_workers_hours_check",
+          "value": "\"report_workers\".\"hours\" >= 0 AND \"report_workers\".\"hours\" <= 24"
         }
       },
       "isRLSEnabled": false
