@@ -239,24 +239,78 @@ export async function generateReportPdf(report: ReportDetails): Promise<Uint8Arr
   }
   y -= 16;
 
+
   // ---------- Workers ----------
-  const workerHours = report.workers.reduce((n, w) => n + Number(w.hours), 0);
-  section("Workers on duty", `${report.workers.length} ${report.workers.length === 1 ? "worker" : "workers"}`);
+  const workersByTrade = Array.from(
+    report.workers
+      .reduce(
+        (groups, worker) => {
+          const trade = worker.trade.trim();
+          const key = trade.toLowerCase();
+          const existing = groups.get(key);
+
+          if (existing) {
+            existing.count += 1;
+            existing.hours += Number(worker.hours);
+          } else {
+            groups.set(key, {
+              trade,
+              count: 1,
+              hours: Number(worker.hours),
+            });
+          }
+
+          return groups;
+        },
+        new Map<
+          string,
+          { trade: string; count: number; hours: number }
+        >(),
+      )
+      .values(),
+  ).sort((a, b) => a.trade.localeCompare(b.trade));
+
+  const workerHours = report.workers.reduce(
+    (total, worker) => total + Number(worker.hours),
+    0,
+  );
+
+  section(
+    "Workers on duty",
+    `${report.workers.length} ${report.workers.length === 1 ? "worker" : "workers"
+    }`,
+  );
+
   if (report.workers.length === 0) {
-    text("No workers were recorded in this report.", MARGIN, y, 10, regular, MUTED);
+    text(
+      "No workers were recorded in this report.",
+      MARGIN,
+      y,
+      10,
+      regular,
+      MUTED,
+    );
     y -= 14;
   } else {
     table(
       [
-        { header: "Name", width: CONTENT_W - 285 },
-        { header: "Trade", width: 95 },
-        { header: "Phone", width: 105 },
-        { header: "Hours worked", width: 85, align: "right" },
+        { header: "Trade", width: CONTENT_W - 250 },
+        { header: "Number of workers", width: 110, align: "right" },
+        { header: "Total hours worked", width: 140, align: "right" },
       ],
-      report.workers.map((w) => [displayName(w), w.trade, w.phone || "-", String(w.hours)]),
-      ["Total", "", "", workerHours.toFixed(2)],
+      workersByTrade.map((group) => [
+        group.trade,
+        String(group.count),
+        group.hours.toFixed(2),
+      ]),
+      [
+        "Total",
+        String(report.workers.length),
+        workerHours.toFixed(2),
+      ],
     );
   }
+
   y -= 22;
 
   // ---------- Machineries ----------

@@ -33,11 +33,11 @@ export function ReportDetailsView({ report, back, siteHref, actions }: Props) {
   const workerHours = report.workers.reduce((n, w) => n + Number(w.hours), 0);
 
   return (
-<AdminPage
-  title={report.siteName}
-  description={`Report for ${formatDay(report.createdAt)}`}
-  back={back}
->
+    <AdminPage
+      title={report.siteName}
+      description={`Report for ${formatDay(report.createdAt)}`}
+      back={back}
+    >
       <SimpleGrid cols={{ base: 2, md: 4 }}>
         <StatCard label="Workers on duty" value={report.workers.length} icon="users" color="teal" />
         <StatCard label="Worker hours" value={workerHours.toFixed(1)} icon="check" color="blue" />
@@ -203,17 +203,17 @@ export function ReportDetailsView({ report, back, siteHref, actions }: Props) {
         )}
       </Panel>
       <Group justify="flex-end" gap="sm" mt="md">
-  {actions}
+        {actions}
 
-  <Button
-    component="a"
-    href={`/api/reports/${report.id}/pdf`}
-    variant="light"
-    size="sm"
-  >
-    Download PDF
-  </Button>
-</Group>
+        <Button
+          component="a"
+          href={`/api/reports/${report.id}/pdf`}
+          variant="light"
+          size="sm"
+        >
+          Download PDF
+        </Button>
+      </Group>
     </AdminPage>
   );
 }
