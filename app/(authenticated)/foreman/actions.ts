@@ -5,9 +5,9 @@ import { cache } from "react";
 
 import { db } from "@/db";
 import { reports, sites } from "@/db/schema";
+import { TZ } from "@/lib/helper";
 
 // "Today" depends on the time zone. Change this if your sites are elsewhere.
-const TZ = sql.raw("'Africa/Nairobi'");
 
 // None of these functions check access: callers must call requireRole("foreman") first,
 // and must pass the site from the signed-in user's profile, never from the browser.

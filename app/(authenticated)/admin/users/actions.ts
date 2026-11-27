@@ -17,11 +17,11 @@ import type { Role } from "@/types/user";
 import z from "zod"
 import { inviteStaffSchema } from "@/schemas/user";
 import { db } from "@/db";
+import { isUuid } from "@/lib/helper";
 
 export type ActionResult = { ok: true; message: string } | { ok: false; error: string };
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const isUuid = (value: string) => UUID_RE.test(value);
+
 
 // Keep the role list in sync with ROLES. Admins are never created through this form.
 

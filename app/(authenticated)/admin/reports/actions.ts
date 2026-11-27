@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { machineries, materials, profiles, reports, sites } from "@/db/schema";
+import { isUuid, TZ } from "@/lib/helper";
 import { and, asc, desc, eq, sql, type SQL } from "drizzle-orm";
 import { cache } from "react";
 
@@ -10,7 +11,7 @@ import "server-only";
 
 
 // "Created" days are compared in the site's time zone. Change this if your sites are elsewhere.
-const TZ = sql.raw("'Africa/Nairobi'");
+// const TZ = sql.raw("'Africa/Nairobi'");
 
 // A ?from= or ?to= value as "YYYY-MM-DD", or null if it is missing or not a real date.
 export function parseDay(value: string | string[] | undefined): string | null {
@@ -49,13 +50,13 @@ export async function getReports({ from, to }: { from?: string | null; to?: stri
     .orderBy(desc(reports.createdAt), asc(sites.name));
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 
 // One report with everything on it: site, creator, machineries, materials and the
 // materials total. Returns null for a malformed or unknown id.
 // This function does NOT check access: callers must call requireRole() first.
 export const getReportById = cache(async (id: string) => {
-  if (!UUID_RE.test(id)) return null; // a malformed id would make Postgres throw
+  if (!isUuid(id)) return null; // a malformed id would make Postgres throw
 
   const [reportRows, machineryRows, materialRows, totalRows] = await Promise.all([
     db

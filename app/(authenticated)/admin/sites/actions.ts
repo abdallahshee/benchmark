@@ -7,6 +7,7 @@ import { profiles, reports, sites } from "@/db/schema";
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { isUuid, TZ } from "@/lib/helper";
 
 
 const createSiteSchema = z.object({
@@ -40,8 +41,7 @@ export async function createSite(input: { name: string }): Promise<CreateSiteRes
   return { ok: true };
 }
 
-// "Today" depends on the time zone. Change this if your sites are elsewhere.
-const TZ = sql.raw("'Africa/Nairobi'");
+
 
 // When the site's first report of today was created, as epoch milliseconds, or null.
 const todayReportAt = sql<number | null>`(
@@ -72,11 +72,10 @@ export async function getSites() {
 
 
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 
 // A malformed id would make Postgres throw, so the query functions treat it as
-// "not found" instead. The ! in `if (!isUuid(id)) return null;` means "not a UUID".
-const isUuid = (value: string) => UUID_RE.test(value);
+
 // Shared by the foreman and secretary lookups. A site has at most one of each.
 async function getSiteUserByRole(siteId: string, role: "foreman" | "secretary") {
   if (!isUuid(siteId)) return null;

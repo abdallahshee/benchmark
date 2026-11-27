@@ -5,9 +5,10 @@ import { asc, count, desc, eq, isNull, ne, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { profiles, reports, sites } from "@/db/schema";
+import { TZ } from "@/lib/helper";
 
 // Nairobi timezone.
-const TZ = sql.raw("'Africa/Nairobi'");
+
 
 const LATEST_REPORTS = 8;
 const ROLELESS_SHOWN = 5;
@@ -73,7 +74,7 @@ export async function getDashboardData() {
         db
             .select({
                 id: reports.id,
-                status: reports.status,
+                // status: reports.status,
                 createdAt: reports.createdAt,
                 siteName: sites.name,
                 creatorFirstName: profiles.firstName,
