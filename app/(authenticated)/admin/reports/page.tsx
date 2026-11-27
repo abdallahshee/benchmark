@@ -1,4 +1,6 @@
 import {
+  Button,
+  Group,
   Skeleton,
   Table,
   TableScrollContainer,
@@ -10,7 +12,7 @@ import {
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { AdminPage, EmptyState, Panel, ReportStatusBadge, Th } from "@/components/admin-ui";
+import { AdminPage, EmptyState, Panel, Th } from "@/components/admin-ui";
 import { AnchorLink } from "@/components/anchor-link";
 import { LinkButton } from "@/components/link-button";
 import { requireRole } from "@/lib/auth";
@@ -67,14 +69,13 @@ async function Reports({ searchParams }: PageProps) {
           }
         />
       ) : (
-        <TableScrollContainer minWidth={640}>
+        <TableScrollContainer minWidth={620}>
           <Table verticalSpacing="sm" horizontalSpacing="lg" highlightOnHover>
             <TableThead>
               <TableTr>
                 <Th>Site</Th>
                 <Th>Created by</Th>
-                <Th>Created</Th>
-                <Th>Status</Th>
+                <Th>Submitted</Th>
                 <Th />
               </TableTr>
             </TableThead>
@@ -90,13 +91,20 @@ async function Reports({ searchParams }: PageProps) {
                     {displayName({ firstName: r.creatorFirstName, lastName: r.creatorLastName })}
                   </TableTd>
                   <TableTd>{formatDateTime(r.createdAt)}</TableTd>
-                  <TableTd>
-                    <ReportStatusBadge status={r.status} />
-                  </TableTd>
                   <TableTd ta="right">
-                    <LinkButton href={`/admin/reports/${r.id}`} size="xs" variant="light">
-                      Read
-                    </LinkButton>
+                    <Group gap="xs" justify="flex-end" wrap="nowrap">
+                      <Button
+                        component="a"
+                        href={`/api/reports/${r.id}/pdf`}
+                        size="xs"
+                        variant="default"
+                      >
+                        PDF
+                      </Button>
+                      <LinkButton href={`/admin/reports/${r.id}`} size="xs" variant="light">
+                        Read
+                      </LinkButton>
+                    </Group>
                   </TableTd>
                 </TableTr>
               ))}
