@@ -9,8 +9,6 @@ import { TZ } from "@/lib/helper";
 
 // Nairobi timezone.
 
-
-const LATEST_REPORTS = 8;
 const ROLELESS_SHOWN = 5;
 
 // Everyone except admins, including users without an assigned role.
@@ -45,7 +43,7 @@ export async function getDashboardData() {
         [{ reportCount }],
         [{ userCount }],
         activeSites,
-        latestReports,
+        todayReports,
         usersWithoutRole,
         [{ usersWithoutRoleCount }],
     ] = await Promise.all([
@@ -70,11 +68,11 @@ export async function getDashboardData() {
             .where(eq(sites.status, "active"))
             .orderBy(asc(sites.name)),
 
-        // Latest reports.
-        db
+
+        // Today's reports from every site.
+         db
             .select({
                 id: reports.id,
-                // status: reports.status,
                 createdAt: reports.createdAt,
                 siteName: sites.name,
                 creatorFirstName: profiles.firstName,
@@ -83,8 +81,11 @@ export async function getDashboardData() {
             .from(reports)
             .innerJoin(sites, eq(sites.id, reports.siteId))
             .leftJoin(profiles, eq(profiles.id, reports.createdBy))
-            .orderBy(desc(reports.createdAt))
-            .limit(LATEST_REPORTS),
+            .where(
+                sql`(${reports.createdAt} at time zone ${TZ})::date =
+            (now() at time zone ${TZ})::date`
+            )
+            .orderBy(desc(reports.createdAt)),
 
         // Users who have not been assigned a role.
         db
@@ -133,7 +134,7 @@ export async function getDashboardData() {
             notReported,
         },
 
-        latestReports,
+        todayReports,
 
         setup: {
             sitesMissingStaff,

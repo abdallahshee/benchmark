@@ -3,6 +3,7 @@
 import { signOut } from "@/app/login/actions";
 import { Button, Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
+import { LogOut } from "lucide-react";
 
 export function SignOutButton() {
   const confirm = () =>
@@ -15,7 +16,13 @@ export function SignOutButton() {
     });
 
   return (
-    <Button variant="default" onClick={confirm} className="self-start">
+    <Button
+      variant="filled"
+      onClick={confirm}
+      color="red"
+      leftSection={<LogOut size={16} />}
+      className="self-start cursor-pointer"
+    >
       Sign out
     </Button>
   );

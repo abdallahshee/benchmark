@@ -23,6 +23,16 @@ export async function GET(_request: Request, { params }: RouteContext) {
   } else {
     return plain("You don't have access to reports.", 403);
   }
+
+//   console.log("PDF download debug:", {
+//   reportId,
+//   userRole: user.role,
+//   userSiteId: user.siteId,
+//   reportFound: Boolean(report),
+// });
+
+
+
   // Another site's report and a wrong id look the same, so ids can't be probed.
   if (!report) return plain("Report not found.", 404);
 

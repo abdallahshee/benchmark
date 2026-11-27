@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button, Group, SimpleGrid, Stack, TextInput } from "@mantine/core";
@@ -13,9 +14,16 @@ type SiteRole = "foreman" | "secretary";
 type Props = {
   siteId: string;
   role: SiteRole;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 };
 
-export function NewSiteUserForm({ siteId, role }: Props) {
+export function NewSiteUserForm({
+  siteId,
+  role,
+  onSuccess,
+  onCancel,
+}: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -67,8 +75,12 @@ export function NewSiteUserForm({ siteId, role }: Props) {
         message: result.message,
       });
 
-      router.push(`/admin/sites/${siteId}/users`);
-      router.refresh();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(`/admin/sites/${siteId}/users`);
+        router.refresh();
+      }
     }),
   );
 
@@ -110,8 +122,9 @@ export function NewSiteUserForm({ siteId, role }: Props) {
 
         <Group justify="flex-end">
           <Button
+            type="button"
             variant="default"
-            onClick={() => router.back()}
+            onClick={onCancel ?? (() => router.back())}
             disabled={pending}
           >
             Cancel

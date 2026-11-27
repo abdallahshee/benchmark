@@ -1,9 +1,12 @@
 "use client";
 
+import { BrandMark } from "@/components/brand-logo";
+// import { BrandMark } from "@/app/page";
 import { EngineerArt } from "@/components/engineer-art";
 import { APP_NAME, ICONS, NavIcon } from "@/components/nav-icon";
+import { SignOutButton } from "@/components/sign-out-button";
 import { Role } from "@/types/user";
-import { AppShell, Avatar, Badge, Burger, Button, Group, Stack, Text } from "@mantine/core";
+import { AppShell, Avatar, Badge, Burger, Group, Stack, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -24,10 +27,11 @@ const navItems: NavItem[] = [
 
 type AdminLayoutProps = {
   user: {
-     firstName: string | null;
-      lastName: string | null; 
-      email: string | undefined,
-      role:Role };
+    firstName: string | null;
+    lastName: string | null;
+    email: string | undefined,
+    role: Role
+  };
   signOutAction: () => Promise<void>;
   children: ReactNode;
 };
@@ -113,12 +117,12 @@ export function AdminLayout({ user, signOutAction, children }: AdminLayoutProps)
                 </Text>
               </Stack>
             </Group>
-
-            <form action={signOutAction}>
+            <SignOutButton />
+            {/* <form action={signOutAction}>
               <Button type="submit" variant="filled" color="red" size="sm">
                 Sign out
               </Button>
-            </form>
+            </form> */}
           </Group>
         </Group>
       </AppShell.Header>
@@ -137,15 +141,8 @@ export function AdminLayout({ user, signOutAction, children }: AdminLayoutProps)
           />
 
           <div className="relative z-10 flex items-center gap-3 px-5 py-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-400 text-lg font-extrabold text-slate-900">
-              {APP_NAME.charAt(0)}
-            </div>
-            <div>
-              <p className="text-base font-semibold leading-tight text-white">{APP_NAME}</p>
-              <p className="text-[11px] font-semibold uppercase leading-tight tracking-widest text-amber-400">
-                Site management
-              </p>
-            </div>
+
+            <BrandMark />
           </div>
 
           <nav aria-label="Admin" className="relative z-10 flex flex-col gap-1 px-3 pt-2">

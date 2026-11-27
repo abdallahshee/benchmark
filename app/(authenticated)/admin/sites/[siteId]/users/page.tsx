@@ -16,7 +16,6 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { AdminPage, EmptyState, Panel, Th } from "@/components/admin-ui";
-import { AddUserButton } from "@/components/add-user-button";
 import { requireRole } from "@/lib/auth";
 import { displayName } from "@/lib/formats";
 import { SITE_ROLES } from "@/lib/site-roles";
@@ -24,6 +23,7 @@ import { SITE_ROLES } from "@/lib/site-roles";
 import { getSiteById } from "../action";
 import { getUsersBySiteId } from "../../actions";
 import { LinkButton } from "@/components/link-button";
+import { SiteStaffActions } from "@/components/sites/staff-actions";
 
 export const metadata: Metadata = {
   title: "Site users",
@@ -77,27 +77,13 @@ async function SiteUsers({ params }: PageProps) {
         href: `/admin/sites/${site.id}`,
         label: site.name,
       }}
-      actions={
-        <Group gap="sm">
-          <AddUserButton
-            label="Add foreman"
-            href={`/admin/sites/${site.id}/users/new?role=foreman`}
-            color="blue"
-            disabledReason={
-              hasForeman ? "This site already has a foreman." : undefined
-            }
-          />
-
-          <AddUserButton
-            label="Add secretary"
-            href={`/admin/sites/${site.id}/users/new?role=secretary`}
-            color="teal"
-            disabledReason={
-              hasSecretary ? "This site already has a secretary." : undefined
-            }
-          />
-        </Group>
-      }
+actions={
+  <SiteStaffActions
+    siteId={site.id}
+    hasForeman={hasForeman}
+    hasSecretary={hasSecretary}
+  />
+}
     >
       <Panel
         title="Site users"

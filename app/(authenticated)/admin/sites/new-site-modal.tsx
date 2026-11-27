@@ -39,7 +39,7 @@ export function NewSiteModal() {
 
   return (
     <>
-      <Button onClick={open}>New site</Button>
+      <Button  onClick={open}>New site</Button>
 
       <Modal
         opened={opened}

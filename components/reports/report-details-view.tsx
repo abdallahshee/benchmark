@@ -208,8 +208,6 @@ export function ReportDetailsView({ report, back, siteHref, actions }: Props) {
         <Button
           component="a"
           href={`/api/reports/${report.id}/pdf`}
-          variant="light"
-          size="sm"
         >
           Download PDF
         </Button>

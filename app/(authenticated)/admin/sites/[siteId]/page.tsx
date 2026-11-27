@@ -22,6 +22,7 @@ import {
   initialsOf,
 } from "@/components/admin-ui";
 import { LinkButton } from "@/components/link-button";
+import { SiteStaffActions } from "@/components/sites/staff-actions";
 import { SiteWorkers } from "@/components/workers/site-workers";
 import { requireRole } from "@/lib/auth";
 import { displayName, formatDateTime, formatDay } from "@/lib/formats";
@@ -52,11 +53,9 @@ type Person = {
 function PersonPanel({
   roleLabel,
   person,
-  addHref,
 }: {
-  roleLabel: string;
+  roleLabel: "Foreman" | "Secretary";
   person: Person | null;
-  addHref: string;
 }) {
   const role = roleLabel.toLowerCase();
 
@@ -104,15 +103,9 @@ function PersonPanel({
           </Text>
         </Stack>
       ) : (
-        <Stack gap="xs" align="flex-start">
-          <Text c="dimmed">
-            No {role} is assigned to this site yet.
-          </Text>
-
-          <LinkButton href={addHref} size="xs" variant="light">
-            Add {role}
-          </LinkButton>
-        </Stack>
+        <Text c="dimmed">
+          No {role} is assigned to this site yet.
+        </Text>
       )}
     </Panel>
   );
@@ -167,27 +160,24 @@ async function SiteDetails({ params }: PageProps) {
       actions={
         <Group gap="sm">
           <SiteStatusBadge status={site.status} />
-
-          <LinkButton href={`/admin/sites/${site.id}/users`}>
+          {/* <LinkButton href={`/admin/sites/${site.id}/users`}>
             Users
-          </LinkButton>
+          </LinkButton> */}
         </Group>
       }
     >
       {/* Site foreman and secretary */}
       <SimpleGrid cols={{ base: 1, md: 2 }}>
-        <PersonPanel
-          roleLabel="Foreman"
-          person={foreman}
-          addHref={`/admin/sites/${site.id}/users/new?role=foreman`}
-        />
-
-        <PersonPanel
-          roleLabel="Secretary"
-          person={secretary}
-          addHref={`/admin/sites/${site.id}/users/new?role=secretary`}
-        />
+        <PersonPanel roleLabel="Foreman" person={foreman} />
+        <PersonPanel roleLabel="Secretary" person={secretary} />
       </SimpleGrid>
+
+      {/* Invitation actions */}
+      <SiteStaffActions
+        siteId={site.id}
+        hasForeman={Boolean(foreman)}
+        hasSecretary={Boolean(secretary)}
+      />
 
       {/* Latest reports */}
       <Panel
@@ -224,7 +214,6 @@ async function SiteDetails({ params }: PageProps) {
                     <Text fw={600} size="sm">
                       {formatDay(report.createdAt)}
                     </Text>
-
                     <Text size="xs" c="dimmed">
                       Submitted {formatDateTime(report.createdAt)}
                     </Text>
