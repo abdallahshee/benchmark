@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Stack, Text, Title } from "@mantine/core";
 
+import { AnchorLink } from "@/components/anchor-link";
 import { WorkerDetails } from "@/components/workers/worker-details";
 import { getWorkerById } from "@/lib/workers";
 
@@ -27,7 +28,12 @@ const Page = async ({ params }: PageProps) => {
   return (
     <Stack gap="lg" className="w-full flex-1">
       <Stack gap={4}>
+        <AnchorLink href="/foreman/workers" size="sm">
+          ← Back to workers
+        </AnchorLink>
+
         <Title order={2}>Worker details</Title>
+
         <Text size="sm" c="dimmed">
           View worker information and assigned construction sites.
         </Text>
