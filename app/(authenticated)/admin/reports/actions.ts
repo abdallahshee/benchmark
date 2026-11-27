@@ -1,7 +1,7 @@
 import { db } from "@/db";
-import { machineries, materials, profiles, reports, sites } from "@/db/schema";
+import { machineries, materials, profiles, reports, reportWorkers, sites, workers } from "@/db/schema";
 import { isUuid, TZ } from "@/lib/helper";
-import { and, asc, desc, eq, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { cache } from "react";
 
 // "Created" dates are compared in the site's time zone, as on the pages.
@@ -25,19 +25,26 @@ export function parseDay(value: string | string[] | undefined): string | null {
 // Every report with its site and creator, newest first, then by site name. The optional
 // range is inclusive and applies to the day the report was created. This function does NOT
 // check access: callers must call requireRole() first.
-export async function getReports({ from, to }: { from?: string | null; to?: string | null } = {}) {
+
+export async function getReports({
+  from,
+  to,
+}: {
+  from?: string | null;
+  to?: string | null;
+} = {}) {
   const createdDay = sql`(${reports.createdAt} at time zone ${TZ})::date`;
   const conditions: SQL[] = [];
+
   if (from) conditions.push(sql`${createdDay} >= ${from}::date`);
   if (to) conditions.push(sql`${createdDay} <= ${to}::date`);
 
-  return db
+  const reportRows = await db
     .select({
       id: reports.id,
       createdAt: reports.createdAt,
       siteId: sites.id,
       siteName: sites.name,
-      // Null when the creator's account has been deleted.
       creatorFirstName: profiles.firstName,
       creatorLastName: profiles.lastName,
     })
@@ -46,7 +53,49 @@ export async function getReports({ from, to }: { from?: string | null; to?: stri
     .leftJoin(profiles, eq(profiles.id, reports.createdBy))
     .where(conditions.length ? and(...conditions) : undefined)
     .orderBy(desc(reports.createdAt), asc(sites.name));
+
+  if (reportRows.length === 0) return [];
+
+  // Aggregate workers by report and trade.
+  const workerAggregates = await db
+    .select({
+      reportId: reportWorkers.reportId,
+      trade: workers.trade,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(reportWorkers)
+    .innerJoin(workers, eq(workers.id, reportWorkers.workerId))
+    .where(
+      inArray(
+        reportWorkers.reportId,
+        reportRows.map((report) => report.id),
+      ),
+    )
+    .groupBy(reportWorkers.reportId, workers.trade)
+    .orderBy(asc(workers.trade));
+
+  const workersByReport = new Map<
+    string,
+    { trade: string; count: number }[]
+  >();
+
+  for (const aggregate of workerAggregates) {
+    const existing = workersByReport.get(aggregate.reportId) ?? [];
+
+    existing.push({
+      trade: aggregate.trade,
+      count: aggregate.count,
+    });
+
+    workersByReport.set(aggregate.reportId, existing);
+  }
+
+  return reportRows.map((report) => ({
+    ...report,
+    workersByTrade: workersByReport.get(report.id) ?? [],
+  }));
 }
+
 
 
 

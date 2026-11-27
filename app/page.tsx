@@ -9,20 +9,26 @@ import { EngineerArt } from "@/components/engineer-art";
 // Change this to your product's name.
 const APP_NAME = "Benchmark";
 
+
 const FEATURES = [
     {
-        title: "Daily site reports",
-        text: "Foremen record machinery, workers and materials every day, straight from the site.",
+        title: "Daily site updates",
+        text: "Your foremen can record the day's work, including workers, machinery and materials, right from the site.",
     },
     {
-        title: "One clear picture",
-        text: "See which sites have reported today and open any report in full.",
+        title: "Know what's happening",
+        text: "See which sites have submitted their daily reports and catch up on what's happening across your projects.",
     },
     {
-        title: "The right people on every site",
-        text: "Assign a foreman and a secretary to each site, and keep every record accountable.",
+        title: "Keep everyone organised",
+        text: "Assign foremen and secretaries to each site so everyone knows their responsibilities.",
+    },
+    {
+        title: "Keep track of resources",
+        text: "See how workers, machinery and materials are being used across your sites, all in one place.",
     },
 ];
+
 
 function BrandMark() {
     return (
@@ -98,14 +104,13 @@ export default function Home() {
                             Sites Management
                         </p>
 
-                        <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight xl:text-5xl">
-                            Every site. Every day. One clear picture.
+                        <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight xl:text-4xl">
+                            Every site. Every day report
                         </h1>
 
                         <p className="mt-5 text-lg leading-relaxed text-slate-300">
-                            Oversee your ongoing sites without leaving the
-                            office. Foremen and secretaries report from the
-                            field, and you see it as soon as you open the site.
+                            Keep track of your sites right from the office. Your foremen and secretaries share updates
+                            from the field, so you can see what's happening as soon as you open a site.
                         </p>
 
                         <ul className="mt-10 space-y-6">
