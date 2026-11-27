@@ -9,7 +9,7 @@ const ROLE_HOME: Record<Role, string> = {
   admin: "/admin",
   secretary: "/secretary",
   foreman: "/foreman",
-  worker:"/worker"
+  // worker:"/worker"
 };
 
 // Routes restricted to certain roles. A fast first gate; pages and Server Actions
@@ -19,7 +19,7 @@ const ROLE_PREFIXES: [prefix: string, roles: Role[]][] = [
   ["/admin", ["admin"]],
   ["/secretary", ["secretary"]],
   ["/foreman", ["foreman"]],
-   ["/worker", ["worker"]],
+  //  ["/worker", ["worker"]],
 ];
 
 // Every role-restricted prefix also requires a signed-in user.
