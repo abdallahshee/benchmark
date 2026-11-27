@@ -1,25 +1,25 @@
 import "server-only";
 
-import {  asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import {
-  machineries,
-  materials,
-  profiles,
-  reports,
-  sites,
-} from "@/db/schema";
-
+import { machineries, materials, profiles, reports, sites } from "@/db/schema";
 import { isUuid } from "../helper";
+// use the path your isUuid lives at (site-reports.ts used ../helper)
 
 type Options = {
   id: string;
+  // For the foreman and secretary: their own site, taken from their profile. The report
+  // must belong to it. Leave it out only for the admin, who sees every site.
+  siteId?: string;
 };
 
-// Retrieves a report by ID without checking its status or the caller's role.
-export async function getReportDetails({ id }: Options) {
-  if (!isUuid(id)) return null;
+// One report with its site, creator, machinery, materials and the materials total. Returns
+// null when the id is malformed, the report doesn't exist, or it belongs to another site.
+// This function does NOT check who is calling: callers must call requireRole() first.
+export async function getReportDetails({ id, siteId }: Options) {
+  if (!isUuid(id)) return null; // a malformed id would make Postgres throw
+  if (siteId !== undefined && !isUuid(siteId)) return null;
 
   const [report] = await db
     .select({
@@ -34,11 +34,12 @@ export async function getReportDetails({ id }: Options) {
     .from(reports)
     .innerJoin(sites, eq(sites.id, reports.siteId))
     .leftJoin(profiles, eq(profiles.id, reports.createdBy))
-    .where(eq(reports.id, id))
+    .where(and(eq(reports.id, id), siteId ? eq(reports.siteId, siteId) : undefined))
     .limit(1);
 
   if (!report) return null;
 
+  // Only fetched once access is confirmed.
   const [machineryRows, materialRows, [totals]] = await Promise.all([
     db
       .select({
@@ -58,6 +59,7 @@ export async function getReportDetails({ id }: Options) {
         quantity: materials.quantity,
         unit: materials.unit,
         unitCost: materials.unitCost,
+        // Plain SQL so Postgres does the exact decimal math.
         lineCost: sql<string>`(quantity * unit_cost)`,
       })
       .from(materials)
@@ -65,9 +67,7 @@ export async function getReportDetails({ id }: Options) {
       .orderBy(asc(materials.name)),
 
     db
-      .select({
-        total: sql<string>`coalesce(sum(quantity * unit_cost), 0)`,
-      })
+      .select({ total: sql<string>`coalesce(sum(quantity * unit_cost), 0)` })
       .from(materials)
       .where(eq(materials.reportId, id)),
   ]);
@@ -80,6 +80,4 @@ export async function getReportDetails({ id }: Options) {
   };
 }
 
-export type ReportDetails = NonNullable<
-  Awaited<ReturnType<typeof getReportDetails>>
->;
+export type ReportDetails = NonNullable<Awaited<ReturnType<typeof getReportDetails>>>;

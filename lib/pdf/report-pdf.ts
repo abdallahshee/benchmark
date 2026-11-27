@@ -1,6 +1,6 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 
-import { displayName, formatDate, formatDateTime, formatMoney } from "@/lib/formats";
+import { displayName, formatDateTime, formatDay, formatMoney } from "@/lib/formats";
 import type { ReportDetails } from "@/lib/queries/report-details";
 
 const PAGE_W = 595.28; // A4
@@ -17,8 +17,6 @@ const AMBER = rgb(0.984, 0.749, 0.141);
 const LINE = rgb(0.886, 0.91, 0.941);
 const PANEL = rgb(0.973, 0.98, 0.988);
 const WHITE = rgb(1, 1, 1);
-const GREEN_BG = rgb(0.863, 0.988, 0.906);
-const GREEN_TEXT = rgb(0.086, 0.396, 0.204);
 
 type Col = { header: string; width: number; align?: "left" | "right" };
 
@@ -174,32 +172,21 @@ export async function generateReportPdf(report: ReportDetails): Promise<Uint8Arr
   y -= 32;
   text("Daily report", MARGIN, y, 22, bold, SLATE);
 
-  const chip = clean(report.status.toUpperCase());
-  const chipW = bold.widthOfTextAtSize(chip, 8.5) + 20;
-  page.drawRectangle({
-    x: PAGE_W - MARGIN - chipW,
-    y: y - 5,
-    width: chipW,
-    height: 21,
-    color: GREEN_BG,
-  });
-  text(chip, PAGE_W - MARGIN - chipW + 10, y + 1, 8.5, bold, GREEN_TEXT);
-
   y -= 26;
   for (const line of wrap(report.siteName, bold, 14, CONTENT_W)) {
     text(line, MARGIN, y, 14, bold, SLATE);
     y -= 18;
   }
-  text(`Report date: ${formatDate(report.createdAt)}`, MARGIN, y, 10, regular, MUTED);
+  text(`Report date: ${formatDay(report.createdAt)}`, MARGIN, y, 10, regular, MUTED);
   y -= 26;
 
   // ---------- Summary panel ----------
   const machineCount = report.machineries.reduce((n, m) => n + m.number, 0);
   const fields: [string, string][] = [
     ["Created by", displayName({ firstName: report.creatorFirstName, lastName: report.creatorLastName })],
-    ["Report date", formatDate(report.createdAt)],
-    ["Created", formatDateTime(report.createdAt)],
-    ["Sent to the secretary", report.createdAt ? formatDateTime(report.createdAt) : "-"],
+    ["Report date", formatDay(report.createdAt)],
+    // A report is submitted the moment it is created, so there is one timestamp.
+    ["Submitted", formatDateTime(report.createdAt)],
     ["Machines in operation", String(machineCount)],
     ["Materials cost", formatMoney(report.materialsTotal)],
   ];
@@ -320,7 +307,7 @@ export async function generateReportPdf(report: ReportDetails): Promise<Uint8Arr
     });
   });
 
-  doc.setTitle(clean(`Daily report - ${report.siteName} - ${formatDate(report.createdAt)}`));
+  doc.setTitle(clean(`Daily report - ${report.siteName} - ${formatDay(report.createdAt)}`));
   doc.setCreator("Construction Site Management System");
 
   return doc.save();

@@ -1,48 +1,46 @@
 import "server-only";
 
-import { and, asc, count, eq, ne, sql } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import { profiles, reports } from "@/db/schema";
-import { getSiteSummary } from "@/app/(authenticated)/foreman/actions";
+import { profiles, reports, sites } from "@/db/schema";
 
 // "Today" depends on the time zone. Change this if your sites are elsewhere.
 const TZ = sql.raw("'Africa/Nairobi'");
 
-const PENDING_SHOWN = 10;
+// A report has no date column: its day is the day it was created, in the site's time zone.
+const reportDay = sql`((${reports.createdAt} at time zone ${TZ})::date)`;
+const todayDate = sql`((now() at time zone ${TZ})::date)`;
 
-// This function does NOT check access: callers must call requireRole("secretary") first
-// and pass the site from the signed-in user's profile, never from the browser. Drafts are
-// private to the foreman, so every query here leaves them out.
+// Everything the secretary's dashboard shows for one site. This function does NOT check
+// access: callers must call requireRole("secretary") first and pass the site from the
+// signed-in user's profile, never from the browser.
 export async function getSecretaryDashboard(siteId: string) {
-  const [site, todayRows, statusRows, pending] = await Promise.all([
-    getSiteSummary(siteId),
+  const [siteRows, todayRows, [stats], recent] = await Promise.all([
+    db.select({ id: sites.id, name: sites.name }).from(sites).where(eq(sites.id, siteId)).limit(1),
 
-    // The report for today's date, if the foreman has sent one. One report per site per day.
+    // The report created today, if there is one. A site has one report per day.
     db
-      .select({ id: reports.id, status: reports.status, createdAt: reports.createdAt })
+      .select({ id: reports.id, createdAt: reports.createdAt })
       .from(reports)
-      .where(
-        and(
-          eq(reports.siteId, siteId),
-          ne(reports.status, "submitted"),
-          sql`${reports.createdAt} = (now() at time zone ${TZ})::date`,
-        ),
-      )
+      .where(and(eq(reports.siteId, siteId), sql`${reportDay} = ${todayDate}`))
       .limit(1),
 
     db
-      .select({ status: reports.status, total: count() })
+      .select({
+        total: count(),
+        thisMonth: sql<number>`count(*) filter (
+          where date_trunc('month', ${reports.createdAt} at time zone ${TZ})
+              = date_trunc('month', now() at time zone ${TZ})
+        )::int`,
+      })
       .from(reports)
-      .where(and(eq(reports.siteId, siteId), ne(reports.status, "submitted")))
-      .groupBy(reports.status),
+      .where(eq(reports.siteId, siteId)),
 
-    // The review queue: the report that has waited longest comes first.
     db
       .select({
         id: reports.id,
         createdAt: reports.createdAt,
-        // submittedAt: reports.submittedAt,
         creatorFirstName: profiles.firstName,
         creatorLastName: profiles.lastName,
         // Plain SQL so Postgres does the exact decimal math.
@@ -52,18 +50,18 @@ export async function getSecretaryDashboard(siteId: string) {
       })
       .from(reports)
       .leftJoin(profiles, eq(profiles.id, reports.createdBy))
-      .where(and(eq(reports.siteId, siteId), eq(reports.status, "submitted")))
-      .orderBy(asc(reports.createdAt))
-      .limit(PENDING_SHOWN),
+      .where(eq(reports.siteId, siteId))
+      .orderBy(desc(reports.createdAt), desc(reports.id))
+      .limit(5),
   ]);
 
-  const counts = { draft: 0, approved: 0, rejected: 0 };
-  for (const row of statusRows) {
-    if (row.status in counts) counts[row.status as keyof typeof counts] = row.total;
-  }
-
-  return { site, today: todayRows[0] ?? null, counts, pending };
+  return {
+    site: siteRows[0] ?? null,
+    today: todayRows[0] ?? null,
+    total: stats.total,
+    thisMonth: stats.thisMonth,
+    recent,
+  };
 }
 
 export type SecretaryDashboard = Awaited<ReturnType<typeof getSecretaryDashboard>>;
-export const SECRETARY_PENDING_SHOWN = PENDING_SHOWN;
