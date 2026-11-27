@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 type PageProps = {
-  params: Promise<{ id: string }>;
+  params: Promise<{ reportId: string }>;
 };
 
 export default function ForemanReportPage({ params }: PageProps) {
@@ -41,10 +41,10 @@ async function ForemanReport({ params }: PageProps) {
     notFound();
   }
 
-  const { id } = await params;
+  const { reportId } = await params;
 
   // Any authenticated user can open any report.
-  const report = await getReportDetails({ id });
+  const report = await getReportDetails({ reportId });
 
   if (!report) {
     notFound();
