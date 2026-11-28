@@ -14,40 +14,21 @@ import { authErrorMessage } from "@/lib/supabase/errors";
 import { authUsers } from "drizzle-orm/supabase";
 
 import type { Role } from "@/types/user";
-import z from "zod"
-import { inviteStaffSchema } from "@/schemas/user";
 import { db } from "@/db";
 import { isUuid } from "@/lib/helper";
+import { InviteSiteUserRequest, InviteStaffSchema } from "@/forms/user-forms";
 
 export type ActionResult = { ok: true; message: string } | { ok: false; error: string };
 
 
 
-// Keep the role list in sync with ROLES. Admins are never created through this form.
-
-
-type SiteStaffRole = "foreman" | "secretary";
-
-
-
-
-// Use your existing ActionResult type and inviteStaffSchema.
-
-type InviteSiteUserInput = {
-  siteId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-};
-
 async function inviteSiteUser(
-  input: InviteSiteUserInput,
+  input: InviteSiteUserRequest,
   role: SiteRole,
 ): Promise<ActionResult> {
   await requireRole("admin");
 
-  const parsed = inviteStaffSchema.safeParse(input);
+  const parsed = InviteStaffSchema.safeParse(input);
 
   if (!parsed.success) {
     return {
@@ -56,7 +37,7 @@ async function inviteSiteUser(
     };
   }
 
-  const { siteId, firstName, lastName, email, phone } = parsed.data;
+  const { siteId, password,firstName, lastName, email, phone } = parsed.data;
 
   const [site] = await db
     .select({ id: sites.id })
@@ -90,58 +71,45 @@ async function inviteSiteUser(
   const admin = createAdminClient();
   const siteUrl = await getSiteUrl();
 
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(
-    email,
-    {
-      data: {
-        first_name: firstName,
-        last_name: lastName,
-        phone,
-      },
-      redirectTo: `${siteUrl}/auth/confirm?next=/set-password`,
+const { data, error } = await admin.auth.admin.inviteUserByEmail(
+  email,
+  {
+    data: {
+      first_name: firstName,
+      last_name: lastName,
+      phone,
     },
-  );
+    redirectTo: `${siteUrl}/auth/confirm?next=/change-password`,
+  },
+);
 
-  if (error) {
-    if (
-      error.code === "email_exists" ||
-      error.code === "user_already_exists"
-    ) {
-      return {
-        ok: false,
-        error: "A user with this email already exists",
-      };
-    }
+if (error) {
+  return {
+    ok: false,
+    error: authErrorMessage(error, "invite"),
+  };
+}
 
-    if (error.code === "over_email_send_rate_limit") {
-      return {
-        ok: false,
-        error: "Email rate limit reached. Try again later.",
-      };
-    }
+const userId = data.user.id;
 
-    return {
-      ok: false,
-      error: authErrorMessage(error, "invite"),
-    };
-  }
+// Assign temporary password and account metadata.
+const { error: updateError } =
+  await admin.auth.admin.updateUserById(userId, {
+    password,
+    app_metadata: {
+      role,
+      must_change_password: true,
+    },
+  });
 
-  const userId = data.user.id;
+if (updateError) {
+  await admin.auth.admin.deleteUser(userId);
 
-  // Store role in Supabase app_metadata.
-  const { error: metaError } =
-    await admin.auth.admin.updateUserById(userId, {
-      app_metadata: { role },
-    });
-
-  if (metaError) {
-    await admin.auth.admin.deleteUser(userId);
-
-    return {
-      ok: false,
-      error: "Could not set up the account. Please try again.",
-    };
-  }
+  return {
+    ok: false,
+    error: "Could not configure the account. Please try again.",
+  };
+}
 
   // Assign the site and role to the profile.
   try {
@@ -183,14 +151,14 @@ async function inviteSiteUser(
 
 // Only this action can invite a foreman.
 export async function inviteForeman(
-  input: InviteSiteUserInput,
+  input: InviteSiteUserRequest,
 ): Promise<ActionResult> {
   return inviteSiteUser(input, "foreman");
 }
 
 // Only this action can invite a secretary.
 export async function inviteSecretary(
-  input: InviteSiteUserInput,
+  input: InviteSiteUserRequest,
 ): Promise<ActionResult> {
   return inviteSiteUser(input, "secretary");
 }
@@ -222,12 +190,7 @@ export async function deleteUser(userId: string): Promise<ActionResult> {
 
 
 
-export type CreateUserInput = {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
+export type CreateUserInput = InviteSiteUserRequest &{
   role: Role;
 };
 

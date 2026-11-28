@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { AdminPage } from "@/components/admin-ui";
-// import type { ReportStatus } from "@/db/schema";
 import { requireRole } from "@/lib/auth";
 import { getSiteReports, parseReportFilters } from "@/lib/queries/site-reports";
 import { getSiteById } from "../action";

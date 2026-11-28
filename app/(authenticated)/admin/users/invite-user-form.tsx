@@ -1,15 +1,18 @@
 
 "use client";
 
-import { Button, Group, SimpleGrid, Stack, TextInput } from "@mantine/core";
-import { isEmail, useForm } from "@mantine/form";
+import { Button, Group, PasswordInput, SimpleGrid, Stack, TextInput } from "@mantine/core";
+import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
 import { inviteForeman, inviteSecretary } from "./actions";
+import { InviteSiteUserRequest, InviteSiteUserSchema } from "@/forms/user-forms";
+import { zod4Resolver } from "mantine-form-zod-resolver";
+import { SiteRole } from "@/types/user";
 
-type SiteRole = "foreman" | "secretary";
+
 
 type Props = {
   siteId: string;
@@ -27,23 +30,16 @@ export function NewSiteUserForm({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  const form = useForm({
+  const form = useForm<InviteSiteUserRequest>({
     mode: "uncontrolled",
     initialValues: {
       firstName: "",
       lastName: "",
       email: "",
       phone: "",
+      password: ""
     },
-    validate: {
-      firstName: (v) => (v.trim() ? null : "Enter a first name"),
-      lastName: (v) => (v.trim() ? null : "Enter a last name"),
-      email: isEmail("Enter a valid email"),
-      phone: (v) =>
-        !v.trim() || /^\+?[0-9\s-]{7,15}$/.test(v.trim())
-          ? null
-          : "Enter a valid phone number",
-    },
+    validate: zod4Resolver(InviteSiteUserSchema)
   });
 
   const onSubmit = form.onSubmit((values) =>
@@ -54,6 +50,7 @@ export function NewSiteUserForm({
         lastName: values.lastName.trim(),
         email: values.email.trim(),
         phone: values.phone.trim(),
+        password: values.password
       };
 
       const result =
@@ -117,6 +114,13 @@ export function NewSiteUserForm({
             autoComplete="tel"
             key={form.key("phone")}
             {...form.getInputProps("phone")}
+          />
+
+          <PasswordInput
+            label="Temporary password"
+            autoComplete="new-password"
+            key={form.key("password")}
+            {...form.getInputProps("password")}
           />
         </SimpleGrid>
 

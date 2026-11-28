@@ -1,7 +1,7 @@
 import { signOut } from "@/app/login/actions";
 import { requireRole } from "@/lib/auth";
 import { ReactNode, Suspense } from "react";
-import { AdminLayout, NavItem } from "./admin-layout";
+import { AdminLayout } from "./admin-layout";
 
 
 export default function AuthenticatedLayout({ children }: { children: ReactNode }) {

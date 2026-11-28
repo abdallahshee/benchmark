@@ -1,3 +1,4 @@
+
 import "server-only";
 
 import { eq } from "drizzle-orm";
@@ -7,15 +8,18 @@ import { cache } from "react";
 import { db } from "@/db";
 import { CurrentUser, profiles } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
-import {  Role } from "@/types/user";
+import { Role } from "@/types/user";
 
-// The signed-in user and their role, read from the database (not the JWT), so role
-// changes apply immediately. Cached for the duration of a single request.
+// Signed-in user and their role, read from the database.
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  const claims = data?.claims;
-  if (!claims) return null;
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) return null;
 
   const [profile] = await db
     .select({
@@ -27,14 +31,12 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
       status: profiles.status,
     })
     .from(profiles)
-    .where(eq(profiles.id, claims.sub))
+    .where(eq(profiles.id, user.id))
     .limit(1);
 
-  // A signed-in user can have no profile row (for example one created before the
-  // trigger existed). They get no role, so requireRole() denies them.
   return {
-    id: claims.sub!,
-    email: claims.email,
+    id: user.id,
+    email: user.email,
     firstName: profile?.firstName ?? "",
     lastName: profile?.lastName ?? "",
     phone: profile?.phone ?? "",
@@ -44,21 +46,53 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   };
 });
 
-// For pages: redirects to /login when signed out.
-export async function requireUser(next :string) {
+// For pages: requires authentication.
+export async function requireUser(next: string) {
   const user = await getCurrentUser();
-  if (!user) redirect(`/?next=${encodeURIComponent(next)}`);
+
+  if (!user) {
+    redirect(`/?next=${encodeURIComponent(next)}`);
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+
+  if (authUser?.app_metadata?.must_change_password) {
+    redirect("/change-password");
+  }
+
   return user;
 }
 
-// For pages and Server Actions: 403 unless the user has one of the given roles.
-// Always call this at the top of every Server Action that needs a role; actions are
-// public endpoints and the proxy alone does not protect them.
+// For pages and Server Actions: requires an allowed role.
 export async function requireRole(...roles: Role[]) {
-  const user = await getCurrentUser();
-  if (!user) redirect("/");
-  if (!user.role || !roles.includes(user.role)) forbidden();
+  const user = await requireUser("/");
+
+  if (!user.role || !roles.includes(user.role)) {
+    forbidden();
+  }
+
   return user as CurrentUser & { role: Role };
 }
 
+// Specifically for the change-password page.
+export async function requirePasswordChangeUser() {
+  const supabase = await createClient();
 
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    redirect("/");
+  }
+
+  if (!user.app_metadata?.must_change_password) {
+    redirect("/");
+  }
+
+  return user;
+}
