@@ -30,7 +30,7 @@ export const getWorkersBySiteId = cache(async (siteId: string) => {
     .from(siteWorkers)
     .innerJoin(workers, eq(siteWorkers.workerId, workers.id))
     .where(eq(siteWorkers.siteId, siteId))
-    .orderBy(asc(workers.firstName), asc(workers.lastName));
+    .orderBy(asc( asc(workers.trade)),workers.createdAt);
 });
 
 // import { isUuid } from "@/lib/is-uuid"; // use the path your isUuid lives at
