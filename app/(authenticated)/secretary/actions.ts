@@ -1,3 +1,5 @@
+"use server";
+
 import { db } from "@/db";
 import { profiles, sites } from "@/db/schema";
 import { isUuid } from "@/lib/helper";
