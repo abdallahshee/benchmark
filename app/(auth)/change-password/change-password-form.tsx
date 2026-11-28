@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Alert,
@@ -9,30 +9,40 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { zod4Resolver } from "mantine-form-zod-resolver";
 import { notifications } from "@mantine/notifications";
+
+import {
+  ChangePasswordRequest,
+  ChangePasswordSchema,
+} from "@/forms/user-forms";
 import { changePassword } from "./actions";
-
-
 
 export function ChangePasswordForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const form = useForm<ChangePasswordRequest>({
+    mode: "uncontrolled",
+    initialValues: {
+      password: "",
+      confirmPassword: "",
+    },
+    validate: zod4Resolver(ChangePasswordSchema),
+    validateInputOnBlur:true
+  });
 
-  function handleSubmit() {
-    setError("");
-
+  const handleSubmit = form.onSubmit((values) => {
     startTransition(async () => {
-      const result = await changePassword({
-        password,
-        confirmPassword,
-      });
+      const result = await changePassword(values);
 
       if (!result.ok) {
-        setError(result.error);
+        notifications.show({
+          title: "Unable to change password",
+          message: result.error,
+          color: "red",
+        });
         return;
       }
 
@@ -45,59 +55,50 @@ export function ChangePasswordForm() {
       router.replace("/");
       router.refresh();
     });
-  }
+  });
 
   return (
-    <Stack gap="md">
-      {error && (
-        <Alert color="red" title="Unable to change password">
-          {error}
-        </Alert>
-      )}
+    <form onSubmit={handleSubmit} noValidate>
+      <Stack gap="md">
+        <PasswordInput
+          label="New password"
+          placeholder="Enter your new password"
+          autoComplete="new-password"
+          key={form.key("password")}
+          {...form.getInputProps("password")}
+        />
 
-      <PasswordInput
-        label="New password"
-        placeholder="Enter your new password"
-        value={password}
-        onChange={(event) => setPassword(event.currentTarget.value)}
-        required
-        autoComplete="new-password"
-      />
+        <PasswordInput
+          label="Confirm new password"
+          placeholder="Confirm your new password"
+          autoComplete="new-password"
+          key={form.key("confirmPassword")}
+          {...form.getInputProps("confirmPassword")}
+        />
 
-      <PasswordInput
-        label="Confirm new password"
-        placeholder="Confirm your new password"
-        value={confirmPassword}
-        onChange={(event) =>
-          setConfirmPassword(event.currentTarget.value)
-        }
-        required
-        autoComplete="new-password"
-      />
+        <Stack gap={4}>
+          <Text size="xs" c="dimmed">
+            Your password must have:
+          </Text>
+          <Text size="xs" c="dimmed">
+            • At least 12 characters
+          </Text>
+          <Text size="xs" c="dimmed">
+            • An uppercase and lowercase letter
+          </Text>
+          <Text size="xs" c="dimmed">
+            • A number and a special character
+          </Text>
+        </Stack>
 
-      <Stack gap={4}>
-        <Text size="xs" c="dimmed">
-          Your password must have:
-        </Text>
-        <Text size="xs" c="dimmed">
-          • At least 12 characters
-        </Text>
-        <Text size="xs" c="dimmed">
-          • An uppercase and lowercase letter
-        </Text>
-        <Text size="xs" c="dimmed">
-          • A number and a special character
-        </Text>
+        <Button
+          fullWidth
+          type="submit"
+          loading={isPending}
+        >
+          Change password
+        </Button>
       </Stack>
-
-      <Button
-        fullWidth
-        onClick={handleSubmit}
-        loading={isPending}
-        disabled={!password || !confirmPassword}
-      >
-        Change password
-      </Button>
-    </Stack>
+    </form>
   );
 }

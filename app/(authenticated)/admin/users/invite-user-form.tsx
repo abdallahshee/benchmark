@@ -39,7 +39,8 @@ export function NewSiteUserForm({
       phone: "",
       password: ""
     },
-    validate: zod4Resolver(InviteSiteUserSchema)
+    validate: zod4Resolver(InviteSiteUserSchema),
+    validateInputOnBlur:true,
   });
 
   const onSubmit = form.onSubmit((values) =>

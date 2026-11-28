@@ -10,7 +10,7 @@ import {
   TextInput,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { zodResolver } from "mantine-form-zod-resolver";
+import { zod4Resolver } from "mantine-form-zod-resolver";
 import { notifications } from "@mantine/notifications";
 import { useSearchParams } from "next/navigation";
 import { useTransition } from "react";
@@ -30,7 +30,8 @@ export function LoginForm() {
       email: "",
       password: "",
     },
-    validate: zodResolver(LoginSchema),
+    validate: zod4Resolver(LoginSchema),
+    validateInputOnBlur:true,
   });
 
   const onSubmit = form.onSubmit((values) =>

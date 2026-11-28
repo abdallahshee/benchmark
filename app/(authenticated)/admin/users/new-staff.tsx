@@ -31,7 +31,8 @@ function SiteUserForm({ siteId, role }: Props) {
       password: ""
 
     },
-    validate: zod4Resolver(InviteInputSchema)
+    validate: zod4Resolver(InviteInputSchema),
+    validateInputOnBlur:true
   });
 
   const onSubmit = form.onSubmit((values) =>
