@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Text } from "@mantine/core";
 import { requirePasswordChangeUser } from "@/lib/auth";
-
 import { ChangePasswordForm } from "./change-password-form";
 import { AuthLayout } from "../auth-layout";
 

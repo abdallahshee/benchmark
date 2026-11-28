@@ -69,9 +69,6 @@ export function AuthLayout({
 
 <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
   <div className="mb-6 text-center">
-    {/* <div className="mb-5 flex justify-center">
-      <BrandMark />
-    </div> */}
 
     <h2 className="text-2xl font-bold tracking-tight text-gray-900">
       {title}
