@@ -1,5 +1,5 @@
 {
-  "id": "fdf624f7-fb3d-4c30-854e-4eaa767a2194",
+  "id": "e436e68c-35a1-4008-a61e-6c6da3bcf994",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -591,7 +591,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "workers_trade_idx": {
+          "name": "workers_trade_idx",
+          "columns": [
+            {
+              "expression": "trade",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {

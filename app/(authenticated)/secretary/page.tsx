@@ -1,146 +1,136 @@
-import { Badge, Divider, Group, SimpleGrid, Skeleton, Stack, Text } from "@mantine/core";
+import {
+  Badge,
+  Skeleton,
+  Table,
+  TableScrollContainer,
+  TableTbody,
+  TableTd,
+  TableThead,
+  TableTr,
+  Text,
+} from "@mantine/core";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { AdminPage, EmptyState, Panel, StatCard } from "@/components/admin-ui";
+import { AdminPage, EmptyState, Panel, Th } from "@/components/admin-ui";
+import { AnchorLink } from "@/components/anchor-link";
 import { LinkButton } from "@/components/link-button";
+import { ListSearch } from "@/components/list-search";
 import { requireRole } from "@/lib/auth";
-import { displayName, formatDateTime, formatDay, formatMoney } from "@/lib/formats";
-import { getSecretaryDashboard, type SecretaryDashboard } from "@/lib/queries/secretary";
+import { displayName, formatDay } from "@/lib/formats";
+import { getSiteWorkers } from "@/lib/queries/site-workers";
 
-export const metadata: Metadata = { title: "Dashboard" };
+export const metadata: Metadata = { title: "Workers" };
 
-export default function SecretaryDashboardPage() {
+type PageProps = { searchParams: Promise<{ q?: string | string[] }> };
+
+// The search text comes from the URL, which anyone can edit, so keep it to one short string.
+function parseSearch(value: string | string[] | undefined) {
+  const v = Array.isArray(value) ? value[0] : value;
+  return (v ?? "").trim().slice(0, 100);
+}
+
+export default function SecretaryWorkersPage({ searchParams }: PageProps) {
   return (
-    <Suspense
-      fallback={
-        <AdminPage title="Dashboard">
-          <Skeleton height={360} radius="md" />
-        </AdminPage>
-      }
+    <AdminPage
+      title="Workers"
+      description="The workers registered on your site."
+      back={{ href: "/secretary", label: "Dashboard" }}
+      actions={<LinkButton href="/secretary/workers/new">Add worker</LinkButton>}
     >
-      <SecretaryDashboardContent />
-    </Suspense>
+      <Suspense fallback={<Skeleton height={360} radius="md" />}>
+        <Workers searchParams={searchParams} />
+      </Suspense>
+    </AdminPage>
   );
 }
 
-// What the "Today's report" panel says and where its button goes.
-function todaySummary(today: SecretaryDashboard["today"]) {
-  if (!today) {
-    return { text: "The foreman hasn't submitted today's report yet.", cta: null, href: "" };
-  }
-  return {
-    text: `The foreman submitted today's report on ${formatDateTime(today.createdAt)}.`,
-    cta: "View report",
-    href: `/secretary/reports/${today.id}`,
-  };
-}
-
-async function SecretaryDashboardContent() {
+async function Workers({ searchParams }: PageProps) {
   const user = await requireRole("secretary"); // check access before any query runs
 
-  const data = user.siteId ? await getSecretaryDashboard(user.siteId) : null;
-
-  // No site on the profile, or the site no longer exists.
-  if (!data?.site) {
+  if (!user.siteId) {
     return (
-      <AdminPage title={`Welcome, ${user.firstName || "Secretary"}`}>
-        <Panel>
-          <EmptyState
-            title="No site assigned yet"
-            text="Ask the engineer to assign you to a site. Until then you can't see reports."
-          />
-        </Panel>
-      </AdminPage>
+      <Panel>
+        <EmptyState
+          title="No site assigned yet"
+          text="Ask the engineer to assign you to a site. Until then you can't register workers."
+        />
+      </Panel>
     );
   }
 
-  const { site, today, total, thisMonth, recent } = data;
-  const summary = todaySummary(today);
-  const latest = recent[0];
+  const { q } = await searchParams;
+  const search = parseSearch(q);
+  const rows = await getSiteWorkers(user.siteId, { search });
 
   return (
-    <AdminPage
-      title={`Welcome, ${user.firstName || "Secretary"}`}
-      description={`Site: ${site.name}`}
+    <Panel
+      title="Site workers"
+      description={
+        search
+          ? `${rows.length} ${rows.length === 1 ? "match" : "matches"} for "${search}"`
+          : `${rows.length} ${rows.length === 1 ? "worker" : "workers"}`
+      }
+      action={
+        <ListSearch q={search} basePath="/secretary/workers" placeholder="Search name, trade or phone" />
+      }
+      flush
     >
-      <Panel
-        title="Today's report"
-        description="One report per site, every day"
-        action={
-          today ? (
-            <Badge variant="dot" color="green">
-              Submitted
-            </Badge>
-          ) : undefined
-        }
-      >
-        <Group justify="space-between" align="center" gap="md">
-          <Text c={today ? undefined : "dimmed"} maw={560}>
-            {summary.text}
-          </Text>
-          {summary.cta && <LinkButton href={summary.href}>{summary.cta}</LinkButton>}
-        </Group>
-      </Panel>
-
-      <SimpleGrid cols={{ base: 1, sm: 3 }}>
-        <StatCard label="Reports submitted" value={total} icon="reports" color="blue" />
-        <StatCard label="This month" value={thisMonth} icon="inbox" color="yellow" />
-        <StatCard
-          label="Last report"
-          value={latest ? formatDay(latest.createdAt) : "None yet"}
-          icon="check"
-          color="green"
+      {rows.length === 0 ? (
+        <EmptyState
+          title={search ? "No workers match your search" : "No workers yet"}
+          text={
+            search
+              ? "Try another name, trade or phone number."
+              : "Use Add worker to register the people who work on your site. The foreman picks from this list when recording attendance."
+          }
         />
-      </SimpleGrid>
-
-      <Panel
-        title="Recent reports"
-        description="Your site's five latest"
-        action={
-          <LinkButton href="/secretary/reports" size="xs" variant="light">
-            All reports
-          </LinkButton>
-        }
-        flush
-      >
-        {recent.length === 0 ? (
-          <EmptyState
-            title="No reports yet"
-            text="Reports appear here as soon as the foreman submits them."
-          />
-        ) : (
-          <Stack gap={0}>
-            {recent.map((r, i) => (
-              <div key={r.id}>
-                {i > 0 && <Divider />}
-                <Group justify="space-between" px="lg" py="sm" wrap="nowrap" align="center">
-                  <div>
-                    <Text fw={600} size="sm">
-                      {formatDay(r.createdAt)}
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {displayName({
-                        firstName: r.creatorFirstName,
-                        lastName: r.creatorLastName,
-                      })}
-                      {` · submitted ${formatDateTime(r.createdAt)}`}
-                    </Text>
-                  </div>
-                  <Group gap="md" wrap="nowrap">
-                    <Text size="sm" c="dimmed" visibleFrom="xs">
-                      Materials {formatMoney(r.materialsCost)}
-                    </Text>
-                    <LinkButton href={`/secretary/reports/${r.id}`} size="xs" variant="light">
+      ) : (
+        <TableScrollContainer minWidth={640}>
+          <Table verticalSpacing="sm" horizontalSpacing="lg" highlightOnHover>
+            <TableThead>
+              <TableTr>
+                <Th>Name</Th>
+                <Th>Trade</Th>
+                <Th>Phone</Th>
+                <Th>Last on duty</Th>
+                <Th />
+              </TableTr>
+            </TableThead>
+            <TableTbody>
+              {rows.map((w) => (
+                <TableTr key={w.id}>
+                  <TableTd>
+                    <AnchorLink href={`/secretary/workers/${w.id}`} size="sm" fw={600}>
+                      {displayName(w)}
+                    </AnchorLink>
+                  </TableTd>
+                  <TableTd>
+                    <Badge variant="light" tt="capitalize">
+                      {w.trade}
+                    </Badge>
+                  </TableTd>
+                  <TableTd>{w.phone || "—"}</TableTd>
+                  <TableTd>
+                    {w.lastWorked != null ? (
+                      formatDay(new Date(w.lastWorked))
+                    ) : (
+                      <Text size="sm" c="dimmed">
+                        Never
+                      </Text>
+                    )}
+                  </TableTd>
+                  <TableTd ta="right">
+                    <LinkButton href={`/secretary/workers/${w.id}`} size="xs" variant="light">
                       View
                     </LinkButton>
-                  </Group>
-                </Group>
-              </div>
-            ))}
-          </Stack>
-        )}
-      </Panel>
-    </AdminPage>
+                  </TableTd>
+                </TableTr>
+              ))}
+            </TableTbody>
+          </Table>
+        </TableScrollContainer>
+      )}
+    </Panel>
   );
 }

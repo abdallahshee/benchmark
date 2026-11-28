@@ -108,6 +108,7 @@ CREATE UNIQUE INDEX "profiles_one_foreman_per_site" ON "profiles" USING btree ("
 CREATE UNIQUE INDEX "profiles_one_secretary_per_site" ON "profiles" USING btree ("site_id") WHERE "profiles"."role" = 'secretary';--> statement-breakpoint
 CREATE INDEX "materials_report_id_idx" ON "materials" USING btree ("report_id");--> statement-breakpoint
 CREATE INDEX "machineries_report_id_idx" ON "machineries" USING btree ("report_id");--> statement-breakpoint
+CREATE INDEX "workers_trade_idx" ON "workers" USING btree ("trade");--> statement-breakpoint
 CREATE INDEX "site_workers_site_id_idx" ON "site_workers" USING btree ("site_id");--> statement-breakpoint
 CREATE INDEX "site_workers_worker_id_idx" ON "site_workers" USING btree ("worker_id");--> statement-breakpoint
 CREATE INDEX "report_workers_report_id_idx" ON "report_workers" USING btree ("report_id");--> statement-breakpoint

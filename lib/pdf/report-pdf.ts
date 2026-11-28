@@ -2,7 +2,11 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 
 import { displayName, formatDateTime, formatDay, formatMoney } from "@/lib/formats";
 import type { ReportDetails } from "@/lib/queries/report-details";
+import { TRADE_SUGGESTIONS } from "@/types/enums";
 
+
+// true lists every trade in TRADE_SUGGESTIONS, even those with no workers that day.
+const SHOW_EMPTY_TRADES = false;
 const PAGE_W = 595.28; // A4
 const PAGE_H = 841.89;
 const MARGIN = 48;
@@ -241,55 +245,42 @@ export async function generateReportPdf(report: ReportDetails): Promise<Uint8Arr
 
 
   // ---------- Workers ----------
-  const workersByTrade = Array.from(
-    report.workers
-      .reduce(
-        (groups, worker) => {
-          const trade = worker.trade.trim();
-          const key = trade.toLowerCase();
-          const existing = groups.get(key);
+  // One row per trade. The trades in TRADE_SUGGESTIONS come first, in that order and spelled
+  // as they are there (trades are stored in lower case). Any other trade that was typed in
+  // is kept after them, in alphabetical order, so nobody is left out of the totals.
+  const tradeTotals = new Map<string, { count: number; hours: number }>();
+  for (const w of report.workers) {
+    const key = w.trade.trim().toLowerCase();
+    const total = tradeTotals.get(key) ?? { count: 0, hours: 0 };
+    total.count += 1;
+    total.hours += Number(w.hours);
+    tradeTotals.set(key, total);
+  }
 
-          if (existing) {
-            existing.count += 1;
-            existing.hours += Number(worker.hours);
-          } else {
-            groups.set(key, {
-              trade,
-              count: 1,
-              hours: Number(worker.hours),
-            });
-          }
+  const knownTrades = new Set(TRADE_SUGGESTIONS.map((t) => t.toLowerCase()));
+  const workersByTrade = [
+    ...TRADE_SUGGESTIONS.map((label) => ({
+      label,
+      ...(tradeTotals.get(label.toLowerCase()) ?? { count: 0, hours: 0 }),
+    })),
+    ...[...tradeTotals.keys()]
+      .filter((key) => !knownTrades.has(key))
+      .sort()
+      .map((key) => ({
+        label: key.charAt(0).toUpperCase() + key.slice(1),
+        ...tradeTotals.get(key)!,
+      })),
+  ].filter((row) => SHOW_EMPTY_TRADES || row.count > 0);
 
-          return groups;
-        },
-        new Map<
-          string,
-          { trade: string; count: number; hours: number }
-        >(),
-      )
-      .values(),
-  ).sort((a, b) => a.trade.localeCompare(b.trade));
-
-  const workerHours = report.workers.reduce(
-    (total, worker) => total + Number(worker.hours),
-    0,
-  );
+  const workerHours = report.workers.reduce((total, w) => total + Number(w.hours), 0);
 
   section(
     "Workers on duty",
-    `${report.workers.length} ${report.workers.length === 1 ? "worker" : "workers"
-    }`,
+    `${report.workers.length} ${report.workers.length === 1 ? "worker" : "workers"}`,
   );
 
   if (report.workers.length === 0) {
-    text(
-      "No workers were recorded in this report.",
-      MARGIN,
-      y,
-      10,
-      regular,
-      MUTED,
-    );
+    text("No workers were recorded in this report.", MARGIN, y, 10, regular, MUTED);
     y -= 14;
   } else {
     table(
@@ -298,16 +289,8 @@ export async function generateReportPdf(report: ReportDetails): Promise<Uint8Arr
         { header: "Number of workers", width: 110, align: "right" },
         { header: "Total hours worked", width: 140, align: "right" },
       ],
-      workersByTrade.map((group) => [
-        group.trade,
-        String(group.count),
-        group.hours.toFixed(2),
-      ]),
-      [
-        "Total",
-        String(report.workers.length),
-        workerHours.toFixed(2),
-      ],
+      workersByTrade.map((row) => [row.label, String(row.count), row.hours.toFixed(2)]),
+      ["Total", String(report.workers.length), workerHours.toFixed(2)],
     );
   }
 
