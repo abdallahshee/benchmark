@@ -1,0 +1,215 @@
+import { Anchor, Button, Divider, Group, SimpleGrid, Skeleton, Stack, Text } from "@mantine/core";
+import type { Metadata } from "next";
+import { Suspense } from "react";
+
+import {
+  AdminPage,
+  Avatar,
+  EmptyState,
+  Field,
+  Panel,
+  SiteStatusBadge,
+  StatCard,
+  initialsOf,
+} from "@/components/admin-ui";
+import { LinkButton } from "@/components/link-button";
+import { requireRole } from "@/lib/auth";
+import { displayName, formatDateTime, formatDay, formatMoney } from "@/lib/formats";
+import { getSecretarySite } from "@/lib/queries/secretary";
+
+
+export const metadata: Metadata = { title: "My site" };
+
+export default function SecretarySitePage() {
+  return (
+    <Suspense
+      fallback={
+        <AdminPage title="My site">
+          <Skeleton height={420} radius="md" />
+        </AdminPage>
+      }
+    >
+      <SecretarySiteContent />
+    </Suspense>
+  );
+}
+
+async function SecretarySiteContent() {
+  const user = await requireRole("secretary"); // check access before any query runs
+
+  // The site comes from the signed-in user's profile, never from the URL.
+  const data = user.siteId ? await getSecretarySite(user.siteId) : null;
+
+  if (!data?.site) {
+    return (
+      <AdminPage title="My site">
+        <Panel>
+          <EmptyState
+            title="No site assigned yet"
+            text="Ask the engineer to assign you to a site. Until then there is nothing to show here."
+          />
+        </Panel>
+      </AdminPage>
+    );
+  }
+
+  const { site, foreman, today, workerCount, month, recent } = data;
+  const active = site.status === "active";
+
+  return (
+    <AdminPage
+      title={site.name}
+      description="Your site at a glance"
+      actions={<SiteStatusBadge status={site.status} />}
+    >
+      <Panel title="Today" description="Today's report for your site">
+        <Group justify="space-between" align="center" gap="md">
+          <Text c={today || !active ? undefined : "dimmed"} maw={560}>
+            {today
+              ? `The foreman submitted today's report at ${formatDateTime(today.createdAt)}.`
+              : active
+                ? "The foreman hasn't submitted today's report yet."
+                : "This site is completed, so no new reports are expected."}
+          </Text>
+          {today ? (
+            <LinkButton href={`/secretary/reports/${today.id}`}>View report</LinkButton>
+          ) : active && foreman?.phone ? (
+            <Button component="a" href={`tel:${foreman.phone}`} variant="light">
+              Call the foreman
+            </Button>
+          ) : null}
+        </Group>
+      </Panel>
+
+      <SimpleGrid cols={{ base: 2, md: 4 }}>
+        <StatCard label="Reports this month" value={month.reportCount} icon="reports" color="blue" />
+        <StatCard
+          label="Worker hours this month"
+          value={Number(month.workerHours).toFixed(1)}
+          icon="users"
+          color="teal"
+        />
+        <StatCard
+          label="Machine hours this month"
+          value={Number(month.machineHours).toFixed(1)}
+          icon="gear"
+          color="orange"
+        />
+        <StatCard
+          label="Materials this month"
+          value={formatMoney(month.materialsCost)}
+          icon="money"
+          color="green"
+        />
+      </SimpleGrid>
+
+      <SimpleGrid cols={{ base: 1, md: 2 }}>
+        <Panel title="Foreman">
+          {foreman ? (
+            <Stack gap="md">
+              <Group gap="sm" wrap="nowrap">
+                <Avatar color="yellow" radius="xl" size="lg">
+                  {initialsOf(foreman)}
+                </Avatar>
+                <div>
+                  <Text fw={600}>{displayName(foreman)}</Text>
+                  <Text size="sm" c="dimmed">
+                    Site foreman
+                  </Text>
+                </div>
+              </Group>
+              <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="md">
+                <Field label="Phone">
+                  {foreman.phone ? (
+                    <Anchor href={`tel:${foreman.phone}`} size="sm">
+                      {foreman.phone}
+                    </Anchor>
+                  ) : (
+                    <Text size="sm">—</Text>
+                  )}
+                </Field>
+                <Field label="Email">
+                  {foreman.email ? (
+                    <Anchor href={`mailto:${foreman.email}`} size="sm">
+                      {foreman.email}
+                    </Anchor>
+                  ) : (
+                    <Text size="sm">—</Text>
+                  )}
+                </Field>
+              </SimpleGrid>
+            </Stack>
+          ) : (
+            <Text c="dimmed">No foreman is assigned to this site yet. Ask the engineer.</Text>
+          )}
+        </Panel>
+
+        <Panel title="Workers" description="Registered on this site">
+          <Group justify="space-between" align="center">
+            <Text>
+              <Text span fw={700} fz={28}>
+                {workerCount}
+              </Text>{" "}
+              {workerCount === 1 ? "worker" : "workers"}
+            </Text>
+            <LinkButton href="/secretary/workers" size="xs" variant="light">
+              View workers
+            </LinkButton>
+          </Group>
+        </Panel>
+      </SimpleGrid>
+
+      <Panel
+        title="Latest reports"
+        description="The five most recent"
+        action={
+          <LinkButton href="/secretary/reports" size="xs" variant="light">
+            All reports
+          </LinkButton>
+        }
+        flush
+      >
+        {recent.length === 0 ? (
+          <Text c="dimmed" p="lg">
+            No reports have been submitted for this site yet.
+          </Text>
+        ) : (
+          <Stack gap={0}>
+            {recent.map((r, i) => (
+              <div key={r.id}>
+                {i > 0 && <Divider />}
+                <Group justify="space-between" px="lg" py="sm" wrap="nowrap">
+                  <div>
+                    <Text fw={600} size="sm">
+                      {formatDay(r.createdAt)}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      {displayName({
+                        firstName: r.creatorFirstName,
+                        lastName: r.creatorLastName,
+                      })}
+                      {` · submitted ${formatDateTime(r.createdAt)}`}
+                    </Text>
+                  </div>
+                  <Group gap="xs" wrap="nowrap">
+                    <Button
+                      component="a"
+                      href={`/api/reports/${r.id}/pdf`}
+                      size="xs"
+                      variant="default"
+                    >
+                      PDF
+                    </Button>
+                    <LinkButton href={`/secretary/reports/${r.id}`} size="xs" variant="light">
+                      View
+                    </LinkButton>
+                  </Group>
+                </Group>
+              </div>
+            ))}
+          </Stack>
+        )}
+      </Panel>
+    </AdminPage>
+  );
+}

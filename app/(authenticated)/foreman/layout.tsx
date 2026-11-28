@@ -10,8 +10,8 @@ import { RoleLayout, RoleNavItem } from "./foreman-layout";
 
 const NAV: RoleNavItem[] = [
   { label: "Dashboard", href: "/foreman", icon: "dashboard" },
-  { label: "Reports", href: "/foreman/reports", icon: "reports" },
-  {label: "Workers", href: "/foreman/workers", icon: "users"}
+  { label: "My Reports", href: "/foreman/reports", icon: "reports" },
+  {label: "My Workers", href: "/foreman/workers", icon: "users"}
 ];
 
 export default function ForemanLayout({ children }: { children: ReactNode }) {
@@ -32,7 +32,7 @@ async function ForemanShell({ children }: { children: ReactNode }) {
       homeHref="/foreman"
       navItems={NAV}
       user={user}
-      siteName={site?.name ?? null}
+      // siteName={site?.name ?? null}
       signOutAction={signOut}
     >
       {children}

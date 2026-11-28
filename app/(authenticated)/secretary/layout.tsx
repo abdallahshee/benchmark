@@ -11,12 +11,10 @@ import { RoleLayout } from "../foreman/foreman-layout";
 
 const NAV: RoleNavItem[] = [
   { label: "Dashboard", href: "/secretary", icon: "dashboard" },
-  { label: "Reports", href: "/secretary/reports", icon: "reports" },
-  { label: "Sites", href: "/secretary/sites", icon: "sites" },
-  { label: "Users", href: "/secretary/users", icon: "users" },
-  {label: "Workers",href: "/secretary/workers", icon: "workers"}
-
-
+  { label: "My Reports", href: "/secretary/reports", icon: "reports" },
+  // { label: "My site", href: "/secretary/my-site", icon: "sites" },
+  // { label: "Users", href: "/secretary/users", icon: "users" },
+  {label: "My Workers",href: "/secretary/workers", icon: "workers"}
 
 ];
 
@@ -38,7 +36,7 @@ async function SecretaryShell({ children }: { children: ReactNode }) {
       homeHref="/secretary"
       navItems={NAV}
       user={user}
-      siteName={site?.name ?? null}
+      // siteName={site?.name ?? null}
       signOutAction={signOut}
     >
       {children}

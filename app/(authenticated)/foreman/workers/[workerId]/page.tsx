@@ -1,47 +1,43 @@
+import { Skeleton } from "@mantine/core";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Stack, Text, Title } from "@mantine/core";
+import { Suspense } from "react";
 
-import { AnchorLink } from "@/components/anchor-link";
-import { WorkerDetails } from "@/components/workers/worker-details";
+import { AdminPage } from "@/components/admin-ui";
+// import { WorkerDetailsView } from "@/components/workers/worker-details-view";
+import { requireRole } from "@/lib/auth";
 import { getWorkerById } from "@/lib/workers";
+import { WorkerDetailsView } from "@/components/workers/worker-details";
+// import { getWorkerById } from "@/lib/queries/worker-details";
 
-export const metadata: Metadata = {
-  title: "Worker Details",
-};
+export const metadata: Metadata = { title: "Worker" };
 
-type PageProps = {
-  params: Promise<{
-    workerId: string;
-  }>;
-};
+type PageProps = { params: Promise<{ workerId: string }> };
 
-const Page = async ({ params }: PageProps) => {
-  const { workerId } = await params;
+const BACK = { href: "/foreman", label: "Dashboard" };
 
-  const worker = await getWorkerById(workerId);
-
-  if (!worker) {
-    notFound();
-  }
-
+export default function ForemanWorkerPage({ params }: PageProps) {
   return (
-    <Stack gap="lg" className="w-full flex-1">
-      <Stack gap={4}>
-        <AnchorLink href="/foreman/workers" size="sm">
-          ← Back to workers
-        </AnchorLink>
-
-        <Title order={2}>Worker details</Title>
-
-        <Text size="sm" c="dimmed">
-          View worker information and assigned construction sites.
-        </Text>
-      </Stack>
-
-      <WorkerDetails worker={worker} />
-    </Stack>
+    <Suspense
+      fallback={
+        <AdminPage title="Worker" back={BACK}>
+          <Skeleton height={420} radius="md" />
+        </AdminPage>
+      }
+    >
+      <ForemanWorker params={params} />
+    </Suspense>
   );
-};
+}
 
-export default Page;
+async function ForemanWorker({ params }: PageProps) {
+  const user = await requireRole("foreman"); // check access before any query runs
+  if (!user.siteId) notFound(); // a foreman with no site has no workers
+
+  const { workerId } = await params;
+  // No ID number for the foreman: includeIdNumber stays false.
+  const worker = await getWorkerById({ workerId, siteId: user.siteId });
+  if (!worker) notFound();
+
+  return <WorkerDetailsView worker={worker} back={BACK} reportsBasePath="/foreman/reports" />;
+}

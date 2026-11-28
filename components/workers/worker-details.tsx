@@ -1,161 +1,161 @@
-
 import {
-  Anchor,
   Badge,
-  Divider,
+  Button,
   Group,
-  Paper,
   SimpleGrid,
   Stack,
+  Table,
+  TableScrollContainer,
+  TableTbody,
+  TableTd,
+  TableThead,
+  TableTr,
+  Anchor,
   Text,
-  Title,
 } from "@mantine/core";
 
-import { displayName } from "@/lib/formats";
-import type { WorkerDetails } from "@/lib/workers";
+import { AdminPage, Field, Panel, SiteStatusBadge, StatCard, Th } from "@/components/admin-ui";
+import { AnchorLink } from "@/components/anchor-link";
+import { displayName, formatDay } from "@/lib/formats";
+import { WorkerDetails } from "@/lib/workers";
+// import type { WorkerDetails } from "@/lib/queries/worker-details";
 
-type WorkerDetailsProps = {
+type Props = {
   worker: WorkerDetails;
+  back: { href: string; label: string };
+  reportsBasePath: string; // each attendance row links to `${reportsBasePath}/${reportId}`
+  sitesBasePath?: string; // only the admin has site pages to link to
 };
 
-function formatDate(date: Date | null | undefined) {
-  if (!date) return "—";
+export function WorkerDetailsView({ worker, back, reportsBasePath, sitesBasePath }: Props) {
+  const name = displayName(worker);
 
-  return new Intl.DateTimeFormat("en-KE", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-}
-
-function DetailItem({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
   return (
-    <Stack gap={4}>
-      <Text size="xs" c="dimmed" fw={600}>
-        {label}
-      </Text>
-      <Text size="sm" fw={500}>
-        {value || "—"}
-      </Text>
-    </Stack>
-  );
-}
-
-export function WorkerDetails({ worker }: WorkerDetailsProps) {
-  return (
-    <Stack gap="lg">
-      {/* Worker information */}
-      <Paper withBorder radius="md" p="lg">
-        <Stack gap="lg">
-          <Group justify="space-between" align="center">
-            <Stack gap={2}>
-              <Title order={3}>{displayName(worker)}</Title>
-              <Text size="sm" c="dimmed">
-                Worker information
-              </Text>
-            </Stack>
-
-            <Badge variant="light" color="blue" size="lg">
-              {worker.trade}
-            </Badge>
-          </Group>
-
-          <Divider />
-
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl">
-            <DetailItem label="First name" value={worker.firstName} />
-
-            <DetailItem label="Last name" value={worker.lastName} />
-
-            <DetailItem
-              label="National ID number"
-              value={worker.idNumber}
-            />
-
-            <DetailItem label="Trade" value={worker.trade} />
-
-            <DetailItem label="Phone number" value={worker.phone} />
-
-            <Stack gap={4}>
-              <Text size="xs" c="dimmed" fw={600}>
-                Email address
-              </Text>
-
-              {worker.email ? (
-                <Anchor href={`mailto:${worker.email}`} size="sm" fw={500}>
-                  {worker.email}
-                </Anchor>
-              ) : (
-                <Text size="sm" fw={500}>
-                  —
-                </Text>
-              )}
-            </Stack>
-
-            <DetailItem
-              label="Date registered"
-              value={formatDate(worker.createdAt)}
-            />
-
-            <DetailItem
-              label="Last updated"
-              value={formatDate(worker.updatedAt)}
-            />
-          </SimpleGrid>
-        </Stack>
-      </Paper>
-
-      {/* Assigned sites */}
-      <Paper withBorder radius="md" p="lg">
-        <Stack gap="md">
-          <Group justify="space-between">
-            <Stack gap={2}>
-              <Title order={3}>Assigned sites</Title>
-              <Text size="sm" c="dimmed">
-                Construction sites where this worker is assigned.
-              </Text>
-            </Stack>
-
-            <Badge variant="light" color="blue">
-              {worker.assignedSites.length}{" "}
-              {worker.assignedSites.length === 1 ? "site" : "sites"}
-            </Badge>
-          </Group>
-
-          <Divider />
-
-          {worker.assignedSites.length > 0 ? (
-            <Stack gap="sm">
-              {worker.assignedSites.map((site) => (
-                <Group
-                  key={site.id}
-                  p="sm"
-                  style={{
-                    border: "1px solid var(--mantine-color-default-border)",
-                    borderRadius: "var(--mantine-radius-md)",
-                  }}
-                >
-                  <Text size="sm" fw={500}>
-                    {site.name}
-                  </Text>
-                </Group>
-              ))}
-            </Stack>
-          ) : (
-            <Stack align="center" gap="xs" py="lg">
-              <Text fw={600}>No assigned sites</Text>
-              <Text size="sm" c="dimmed" ta="center">
-                This worker has not been assigned to any construction site.
-              </Text>
-            </Stack>
+    <AdminPage
+      title={name}
+      description="Worker profile"
+      back={back}
+      actions={
+        <Group gap="sm">
+          <Badge size="lg" variant="light" tt="capitalize">
+            {worker.trade}
+          </Badge>
+          {worker.phone && (
+            <Button component="a" href={`tel:${worker.phone}`} size="xs" variant="light">
+              Call
+            </Button>
           )}
-        </Stack>
-      </Paper>
-    </Stack>
+        </Group>
+      }
+    >
+      <SimpleGrid cols={{ base: 1, sm: 3 }}>
+        <StatCard
+          label="Reports attended"
+          value={worker.stats.reportsAttended}
+          icon="reports"
+          color="blue"
+        />
+        <StatCard
+          label="Total hours"
+          value={Number(worker.stats.totalHours).toFixed(1)}
+          icon="check"
+          color="teal"
+        />
+        <StatCard
+          label="Last on duty"
+          value={worker.stats.lastWorked ? formatDay(worker.stats.lastWorked) : "Never"}
+          icon="inbox"
+          color="yellow"
+        />
+      </SimpleGrid>
+
+      <Panel title="Contact">
+        <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="lg">
+          <Field label="Phone">
+            {worker.phone ? (
+              <Anchor href={`tel:${worker.phone}`} size="sm">
+                {worker.phone}
+              </Anchor>
+            ) : (
+              <Text size="sm">—</Text>
+            )}
+          </Field>
+          <Field label="Email">
+            {worker.email ? (
+              <Anchor href={`mailto:${worker.email}`} size="sm">
+                {worker.email}
+              </Anchor>
+            ) : (
+              <Text size="sm">—</Text>
+            )}
+          </Field>
+          {/* null for roles that don't keep the registry */}
+          {worker.idNumber !== null && (
+            <Field label="ID number">
+              <Text size="sm">{worker.idNumber}</Text>
+            </Field>
+          )}
+          <Field label="Registered">
+            <Text size="sm">{formatDay(worker.createdAt)}</Text>
+          </Field>
+        </SimpleGrid>
+      </Panel>
+
+      <Panel title={worker.sites.length === 1 ? "Site" : "Sites"}>
+        {worker.sites.length === 0 ? (
+          <Text c="dimmed">This worker isn&apos;t assigned to a site.</Text>
+        ) : (
+          <Stack gap="xs">
+            {worker.sites.map((s) => (
+              <Group key={s.id} justify="space-between">
+                {sitesBasePath ? (
+                  <AnchorLink href={`${sitesBasePath}/${s.id}`} size="sm" fw={600}>
+                    {s.name}
+                  </AnchorLink>
+                ) : (
+                  <Text size="sm" fw={600}>
+                    {s.name}
+                  </Text>
+                )}
+                <SiteStatusBadge status={s.status} />
+              </Group>
+            ))}
+          </Stack>
+        )}
+      </Panel>
+
+      <Panel title="Recent attendance" description="The ten latest reports this worker was on duty" flush>
+        {worker.recent.length === 0 ? (
+          <Text c="dimmed" p="lg">
+            This worker hasn&apos;t been recorded on any report yet.
+          </Text>
+        ) : (
+          <TableScrollContainer minWidth={420}>
+            <Table verticalSpacing="sm" horizontalSpacing="lg" highlightOnHover>
+              <TableThead>
+                <TableTr>
+                  <Th>Report date</Th>
+                  <Th>Site</Th>
+                  <Th ta="right">Hours worked</Th>
+                </TableTr>
+              </TableThead>
+              <TableTbody>
+                {worker.recent.map((r) => (
+                  <TableTr key={r.reportId}>
+                    <TableTd>
+                      <AnchorLink href={`${reportsBasePath}/${r.reportId}`} size="sm" fw={600}>
+                        {formatDay(r.createdAt)}
+                      </AnchorLink>
+                    </TableTd>
+                    <TableTd>{r.siteName}</TableTd>
+                    <TableTd ta="right">{r.hours}</TableTd>
+                  </TableTr>
+                ))}
+              </TableTbody>
+            </Table>
+          </TableScrollContainer>
+        )}
+      </Panel>
+    </AdminPage>
   );
 }

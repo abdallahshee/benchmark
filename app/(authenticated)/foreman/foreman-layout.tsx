@@ -26,7 +26,7 @@ export type RoleNavItem = {
 };
 
 type RoleLayoutProps = {
-  roleBadge: string;
+ 
   homeHref: string;
   navItems: RoleNavItem[];
   user: {
@@ -35,7 +35,8 @@ type RoleLayoutProps = {
     email: string | undefined;
     role: Role;
   };
-  siteName: string | null;
+  // siteName: string | null;
+  roleBadge: string;
   signOutAction: () => Promise<void>;
   children: ReactNode;
 };
@@ -45,8 +46,8 @@ export function RoleLayout({
   homeHref,
   navItems,
   user,
-  siteName,
-  signOutAction,
+  // siteName,
+  // signOutAction,
   children,
 }: RoleLayoutProps) {
   const [opened, { toggle, close }] = useDisclosure();
@@ -119,10 +120,6 @@ export function RoleLayout({
                   <Text size="sm" fw={600}>
                     {name || "User"}
                   </Text>
-
-                  <Text size="xs" c="dimmed">
-                    {roleBadge}
-                  </Text>
                 </Group>
 
                 <Text size="xs" c="dimmed">
@@ -184,7 +181,7 @@ export function RoleLayout({
             </p>
 
             <p className="mt-1 text-sm font-medium text-white">
-              {siteName ?? "No site assigned"}
+              {APP_NAME ?? "No site assigned"}
             </p>
           </div>
 

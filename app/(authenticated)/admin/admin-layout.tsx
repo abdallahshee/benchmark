@@ -32,6 +32,7 @@ type AdminLayoutProps = {
     email: string | undefined,
     role: Role
   };
+  roleBadge: string;
   signOutAction: () => Promise<void>;
   children: ReactNode;
 };
@@ -40,7 +41,7 @@ type AdminLayoutProps = {
 
 
 
-export function AdminLayout({ user, signOutAction, children }: AdminLayoutProps) {
+export function AdminLayout({ user,roleBadge, signOutAction, children }: AdminLayoutProps) {
   const [opened, { toggle, close }] = useDisclosure();
   const pathname = usePathname();
 
@@ -94,7 +95,7 @@ export function AdminLayout({ user, signOutAction, children }: AdminLayoutProps)
 
             <div className="flex items-center">
               <h2 className="text-lg font-bold leading-tight text-slate-900 dark:text-white">
-                Admin Console
+                {roleBadge} Console
               </h2>
             </div>
           </Group>
@@ -118,11 +119,6 @@ export function AdminLayout({ user, signOutAction, children }: AdminLayoutProps)
               </Stack>
             </Group>
             <SignOutButton />
-            {/* <form action={signOutAction}>
-              <Button type="submit" variant="filled" color="red" size="sm">
-                Sign out
-              </Button>
-            </form> */}
           </Group>
         </Group>
       </AppShell.Header>
