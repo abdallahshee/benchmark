@@ -42,16 +42,32 @@ export const LoginSchema = z.object({
 
 });
 
-export const InviteStaffSchema = InviteSiteUserSchema.extend({
-  role: z.enum(SITE_ROLES),
-  siteId:z.string()
-});
-  
-export const InviteInputSchema = InviteSiteUserSchema.extend({
-  siteId: z.string(),
-});
+// export const InviteStaffSchema = InviteSiteUserSchema.extend({
+//  role: z.enum(["foreman", "secretary"]),
+//   siteId:z.string()
+// });
 
-export type InviteInput = z.infer<typeof InviteInputSchema>;
+// export const InviteStaffSchema = InviteInputSchema.extend({
+//   role: z.enum(["foreman", "secretary"]),
+// });
+  
+// export const InviteInputSchema = InviteSiteUserSchema.extend({
+//   siteId: z.string(),
+// });
+
+
+
+
+// export type InviteInput = z.infer<typeof InviteInputSchema>;
 
 export type LoginRequest = z.infer<typeof LoginSchema>;
 export type InviteSiteUserRequest = z.infer<typeof InviteSiteUserSchema>;
+
+
+// The form's fields plus the site. The role is not part of it: it is fixed by which action
+// is called (inviteForeman or inviteSecretary), so the browser can't forge it.
+export const InviteInputSchema = InviteSiteUserSchema.extend({
+  siteId: z.uuid("Invalid site"),
+});
+
+export type InviteInput = z.infer<typeof InviteInputSchema>;

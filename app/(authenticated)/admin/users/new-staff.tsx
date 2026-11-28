@@ -35,6 +35,7 @@ function SiteUserForm({ siteId, role }: Props) {
   });
 
   const onSubmit = form.onSubmit((values) =>
+   
     startTransition(async () => {
       const input: InviteInput = {
         siteId,
@@ -44,7 +45,7 @@ function SiteUserForm({ siteId, role }: Props) {
         phone: values.phone.trim(),
         password: values.password.trim()
       };
-
+ console.log("The Role is ")
       const result =
         role === "foreman"
           ? await inviteForeman(input)

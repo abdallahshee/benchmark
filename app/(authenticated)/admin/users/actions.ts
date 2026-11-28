@@ -16,28 +16,20 @@ import { authUsers } from "drizzle-orm/supabase";
 import type { Role } from "@/types/user";
 import { db } from "@/db";
 import { isUuid } from "@/lib/helper";
-import { InviteSiteUserRequest, InviteStaffSchema } from "@/forms/user-forms";
+// import { InviteSiteUserRequest } from "@/forms/user-forms";
 
 export type ActionResult = { ok: true; message: string } | { ok: false; error: string };
+import { InviteInput, InviteInputSchema, InviteSiteUserRequest } from "@/forms/user-forms";
 
-
-
-async function inviteSiteUser(
-  input: InviteSiteUserRequest,
-  role: SiteRole,
-): Promise<ActionResult> {
+async function inviteSiteUser(input: InviteInput, role: SiteRole): Promise<ActionResult> {
   await requireRole("admin");
 
-  const parsed = InviteStaffSchema.safeParse(input);
-
+  const parsed = InviteInputSchema.safeParse(input);
   if (!parsed.success) {
-    return {
-      ok: false,
-      error: parsed.error.issues[0]?.message ?? "Invalid details",
-    };
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid details" };
   }
 
-  const { siteId, password,firstName, lastName, email, phone } = parsed.data;
+  const { siteId, password, firstName, lastName, email, phone } = parsed.data;
 
   const [site] = await db
     .select({ id: sites.id })
@@ -150,16 +142,11 @@ if (updateError) {
 }
 
 // Only this action can invite a foreman.
-export async function inviteForeman(
-  input: InviteSiteUserRequest,
-): Promise<ActionResult> {
+export async function inviteForeman(input: InviteInput): Promise<ActionResult> {
   return inviteSiteUser(input, "foreman");
 }
 
-// Only this action can invite a secretary.
-export async function inviteSecretary(
-  input: InviteSiteUserRequest,
-): Promise<ActionResult> {
+export async function inviteSecretary(input: InviteInput): Promise<ActionResult> {
   return inviteSiteUser(input, "secretary");
 }
 
@@ -320,6 +307,5 @@ export async function getUserById(id: string) {
 export type UserDetails = NonNullable<Awaited<ReturnType<typeof getUserById>>>;
 // export type AdminUser = Awaited<ReturnType<typeof getUsers>>[number];
 export type AdminUser = Awaited<ReturnType<typeof getUsers>>[number];
-
 
 
