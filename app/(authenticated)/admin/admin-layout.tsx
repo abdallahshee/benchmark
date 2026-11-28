@@ -41,7 +41,7 @@ type AdminLayoutProps = {
 
 
 
-export function AdminLayout({ user,roleBadge, signOutAction, children }: AdminLayoutProps) {
+export function AdminLayout({ user,roleBadge, children }: AdminLayoutProps) {
   const [opened, { toggle, close }] = useDisclosure();
   const pathname = usePathname();
 

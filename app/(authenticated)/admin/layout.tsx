@@ -15,7 +15,7 @@ export default function AuthenticatedLayout({ children }: { children: ReactNode 
 async function AuthGate({ children }: { children: ReactNode }) {
   const user = await requireRole("admin"); // keep whatever you pass today
   return (
-    <AdminLayout   user={user} signOutAction={signOut}>
+    <AdminLayout   user={user} signOutAction={signOut} roleBadge="Admin">
       {children}
     </AdminLayout>
   );
