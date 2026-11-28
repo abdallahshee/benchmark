@@ -1,4 +1,9 @@
 "use server";
+import { siteWorkers, workers } from "@/db/schema";
+
+import { requireRole } from "@/lib/auth";
+import { AddWorkerInput, AddWorkerSchema } from "@/forms/worker-form";
+import { revalidatePath } from "next/cache";
 
 import { db } from "@/db";
 import { profiles, sites } from "@/db/schema";
@@ -23,13 +28,7 @@ export const getSecretarySite = cache(async (secretaryId: string) => {
 });
 
 
-"use server";
 
-import { siteWorkers, workers } from "@/db/schema";
-
-import { requireRole } from "@/lib/auth";
-import { AddWorkerInput, AddWorkerSchema } from "@/forms/worker-form";
-import { revalidatePath } from "next/cache";
 
 export type ActionResult = { ok: true; message: string } | { ok: false; error: string };
 
